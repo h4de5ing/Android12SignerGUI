@@ -19,7 +19,7 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) throws Exception {
         int width = 600;
-        int height = 450;
+        int height = 500;
         Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("/main.fxml")));
         stage.getIcons().add(new Image("/icon_apk.png"));
 //        stage.setAlwaysOnTop(true);//一直悬浮

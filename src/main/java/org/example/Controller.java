@@ -3,10 +3,10 @@ package org.example;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.geometry.Insets;
+import javafx.scene.Node;
+import javafx.scene.control.*;
+import javafx.scene.layout.FlowPane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -36,6 +36,10 @@ public class Controller implements Initializable {
     Button start;
     @FXML
     TextArea log;
+    @FXML
+    CheckBox multi;
+    @FXML
+    FlowPane platforms;
     String pk8 = "platform.pk8";
     String pem = "platform.x509.pem";
     //对齐命令的路径
@@ -47,6 +51,7 @@ public class Controller implements Initializable {
     File filePem;
     File fileAPK;//待签名的apk文件
     String outFileName = "out";
+    String plName = "T00";//平台名称
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -54,6 +59,7 @@ public class Controller implements Initializable {
         cbb.setEditable(true);
         cbb.valueProperty().addListener((observableValue, oldValue, newValue) -> sign_file.setText(allFileList.get(newValue)));
         initSignDir();
+        multi.selectedProperty().addListener((observableValue, oldValue, newValue) -> platforms.setVisible(newValue));
         sign_file.textProperty().addListener((observableValue, s, newValue) -> updateStartStatus());
         apk_path.textProperty().addListener((observableValue, s, newValue) -> updateStartStatus());
         clear.setOnAction(event -> sign_file.setText(""));
@@ -63,6 +69,7 @@ public class Controller implements Initializable {
             File file = dc.showDialog(new Stage());
             if (file != null) {
                 dirSign = file;
+                plName = dirSign.getName();
                 sign_file.setText(file.getAbsolutePath());
                 filePk8 = new File(file.getAbsoluteFile() + File.separator + pk8);
                 if (!filePk8.exists()) {
@@ -95,7 +102,11 @@ public class Controller implements Initializable {
             apk_path.setText(apk);
             updateStartStatus();
         });
-        start.setOnAction(event -> sign());
+        start.setOnAction(event -> {
+            if (multi.isSelected())
+                multiSign();
+            else sign();
+        });
     }
 
     //初始化环境变量
@@ -196,6 +207,7 @@ public class Controller implements Initializable {
         if (fileAPK == null || !fileAPK.exists()) {
             start.setDisable(false);
         }
+        platforms.setVisible(multi.isSelected());
     }
 
     private final HashMap<String, String> allFileList = new HashMap<>();
@@ -203,8 +215,15 @@ public class Controller implements Initializable {
     private void initSignDir() {
         File file = new File("SignFiles");
         File[] files = file.listFiles();
+        //更新多平台选项
+        platforms.setPadding(new Insets(5, 5, 5, 0));
         if (files != null) {
-            for (File f : files) allFileList.put(f.getName(), f.getAbsolutePath());
+            for (File f : files) {
+                allFileList.put(f.getName(), f.getAbsolutePath());
+                CheckBox checkBox = new CheckBox(f.getName());
+                checkBox.setSelected(true);
+                platforms.getChildren().add(checkBox);
+            }
             cbb.getItems().addAll(allFileList.keySet());
             try {
                 cbb.valueProperty().set(files[0].getName());
@@ -215,6 +234,7 @@ public class Controller implements Initializable {
         }
     }
 
+    //单独签一个
     private void sign() {
         String fileDir = sign_file.getText();
         String apkFile = apk_path.getText();
@@ -231,7 +251,7 @@ public class Controller implements Initializable {
                             System.out.println(outDir.getAbsolutePath() + (result ? " 创建成功" : "创建失败"));
                         }
                         String alignAPK = outDir.getAbsolutePath() + File.separator + "unalign.apk";
-                        String outPath = outDir.getAbsolutePath() + File.separator + outFileName + "_signed.apk";
+                        String outPath = outDir.getAbsolutePath() + File.separator + outFileName + "_" + new File(fileDir).getName() + "_signed.apk";
                         //开始对齐
                         runCommand(zipalign + " -p -v 4 " + fileAPK.getAbsolutePath() + " " + alignAPK);
 //                        System.out.println("对齐文件：" + alignAPK);
@@ -250,6 +270,45 @@ public class Controller implements Initializable {
             }
         } else {
             updateLog(fileDir + " \n路径不存在");
+        }
+    }
+
+    private void multiSign() {
+        String apkFile = apk_path.getText();
+        fileAPK = new File(apkFile);
+        if (fileAPK.exists()) {
+            for (Node child : platforms.getChildren()) {
+                CheckBox checkBox = (CheckBox) child;
+                if (checkBox.isSelected()) {//如果选中就操作
+                    String fileDir = allFileList.get(checkBox.getText());
+                    File filePk8 = new File(new File(fileDir).getAbsoluteFile() + File.separator + pk8);
+                    File filePem = new File(new File(fileDir).getAbsoluteFile() + File.separator + pem);
+                    if (filePk8.exists()) {
+                        if (filePem.exists()) {
+                            File outDir = new File("out");
+                            if (!outDir.exists()) {
+                                boolean result = outDir.mkdir();
+                                System.out.println(outDir.getAbsolutePath() + (result ? " 创建成功" : "创建失败"));
+                            }
+                            String alignAPK = outDir.getAbsolutePath() + File.separator + "unalign.apk";
+                            String outPath = outDir.getAbsolutePath() + File.separator + outFileName + "_" + checkBox.getText() + "_signed.apk";
+                            //开始对齐
+                            runCommand(zipalign + " -p -v 4 " + fileAPK.getAbsolutePath() + " " + alignAPK);
+//                        System.out.println("对齐文件：" + alignAPK);
+                            //签名
+                            runCommand(java + " -jar " + apksigner + " sign --key " + filePk8.getAbsolutePath() + " --cert " + filePem.getAbsolutePath() + " --out " + outDir.getAbsolutePath() + File.separator + outFileName + "_signed.apk " + alignAPK);
+//                        System.out.println("签名文件：" + outPath);
+                            updateLog("签名成功\n" + outPath);
+                        } else {
+                            updateLog(filePem + " 文件不存在");
+                        }
+                    } else {
+                        updateLog(filePk8 + " 文件不存在");
+                    }
+                }
+            }
+        } else {
+            updateLog(fileAPK + " 请选择一个APK");
         }
     }
 
