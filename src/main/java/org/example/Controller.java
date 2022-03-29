@@ -115,10 +115,10 @@ public class Controller implements Initializable {
     private void initEnv() {
         String javaPath = findJavaPath();
         String javaPath2 = PP.getInstance().getKey("java");
-        if (checkPath(javaPath)) {
-            java = javaPath;
+        if (checkPath(javaPath2)) {
+            java = javaPath2;
         } else {
-            if (checkPath(javaPath2)) java = javaPath2;
+            if (checkPath(javaPath)) java = javaPath;
         }
         String zipaligzPath = fileExeFilePath("zipalign.exe");
         String zipaligzPath2 = PP.getInstance().getKey("zipalign");
@@ -258,12 +258,12 @@ public class Controller implements Initializable {
                 if (filePem.exists()) {
                     fileAPK = new File(apkFile);
                     if (fileAPK.exists()) {
-                        String alignAPK = outDir.getAbsolutePath() + File.separator + "unalign.apk";
-                        String outPath = outDir.getAbsolutePath() + File.separator + outFileName + "_" + new File(fileDir).getName() + "_signed.apk";
                         //开始对齐
+                        String alignAPK = outDir.getAbsolutePath() + File.separator + "unalign.apk";
                         runCommand(zipalign + " -p -v 4 " + fileAPK.getAbsolutePath() + " " + alignAPK);
-//                        System.out.println("对齐文件：" + alignAPK);
+                        System.out.println("对齐" + (new File(alignAPK).exists() ? "成功：" : "失败：") + alignAPK);
                         //签名
+                        String outPath = outDir.getAbsolutePath() + File.separator + outFileName + "_" + new File(fileDir).getName() + "_signed.apk";
                         runCommand(java + " -jar " + apksigner + " sign --key " + filePk8.getAbsolutePath() + " --cert " + filePem.getAbsolutePath() + " --out " + outPath + " " + alignAPK);
 //                        System.out.println("签名文件：" + outPath);
                         updateLog(new File(fileDir).getName() + " 签名成功\n" + outPath);
@@ -326,7 +326,7 @@ public class Controller implements Initializable {
 
     private void deleteFile(File outDir, String alignAPK) {
         boolean deleteResult = new File(alignAPK).delete();
-        System.out.println(new File(alignAPK).getAbsolutePath() + (deleteResult ? " 删除成功" : "删除失败"));
+        System.out.println(new File(alignAPK).getAbsolutePath() + (deleteResult ? " 删除成功" : " 删除失败"));
         if (idsig) {
             for (File file : outDir.listFiles()) {
                 if (file.getAbsolutePath().endsWith(".idsig")) {
