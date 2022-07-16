@@ -17,8 +17,8 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.ResourceBundle;
+import java.util.TreeMap;
 
 public class Controller implements Initializable {
     @FXML
@@ -209,7 +209,7 @@ public class Controller implements Initializable {
         platforms.setVisible(multi.isSelected());
     }
 
-    private final HashMap<String, String> allFileList = new HashMap<>();
+    private final TreeMap<String, String> allFileList = new TreeMap<>();
 
     private void initSignDir() {
         File file = new File("SignFiles");
@@ -276,7 +276,6 @@ public class Controller implements Initializable {
             boolean result = outDir.mkdir();
             System.out.println(outDir.getAbsolutePath() + (result ? " 创建成功" : "创建失败"));
         }
-        String alignAPK = outDir.getAbsolutePath() + File.separator + "unalign.apk";
         if (fileAPK.exists()) {
             ObservableList<Node> children = platforms.getChildren();
             for (int i = 0; i < children.size(); i++) {
@@ -290,11 +289,8 @@ public class Controller implements Initializable {
                         if (filePem.exists()) {
                             String outPath = outDir.getAbsolutePath() + File.separator + outFileName + "_" + checkBox.getText() + "_signed.apk";
                             //签名
-                            runCommand(java + " -jar " + apksigner + " sign --key " + filePk8.getAbsolutePath() + " --cert " + filePem.getAbsolutePath() + " --out " + outPath + " " + alignAPK);
+                            runCommand(java + " -jar " + apksigner + " sign --key " + filePk8.getAbsolutePath() + " --cert " + filePem.getAbsolutePath() + " --out " + outPath + " " + fileAPK);
                             updateLog(checkBox.getText() + " 签名成功\n" + outPath);
-                            if (i == (children.size() - 1)) {
-                                deleteFile(outDir, alignAPK);
-                            }
                         } else {
                             updateLog(filePem + " 文件不存在");
                         }
