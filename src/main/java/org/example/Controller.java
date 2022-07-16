@@ -44,7 +44,6 @@ public class Controller implements Initializable {
     String pk8 = "platform.pk8";
     String pem = "platform.x509.pem";
     //对齐命令的路径
-    String zipalign = "";
     String apksigner = "";
     String java = "";
     File dirSign;//sign 文件夹
@@ -120,13 +119,6 @@ public class Controller implements Initializable {
         } else {
             if (checkPath(javaPath)) java = javaPath;
         }
-        String zipaligzPath = fileExeFilePath("zipalign.exe");
-        String zipaligzPath2 = PP.getInstance().getKey("zipalign");
-        if (checkPath(zipaligzPath)) {
-            zipalign = zipaligzPath;
-        } else {
-            if (checkPath(zipaligzPath2)) zipalign = zipaligzPath2;
-        }
         String apksignerPath = fileExeFilePath("apksigner.jar");
         String apksignerPath2 = PP.getInstance().getKey("apksigner");
         if (checkPath(apksignerPath)) {
@@ -141,7 +133,6 @@ public class Controller implements Initializable {
             e.printStackTrace();
         }
         System.out.println(java);
-        System.out.println(zipalign);
         System.out.println(apksigner);
     }
 
@@ -258,16 +249,11 @@ public class Controller implements Initializable {
                 if (filePem.exists()) {
                     fileAPK = new File(apkFile);
                     if (fileAPK.exists()) {
-                        //开始对齐
-                        String alignAPK = outDir.getAbsolutePath() + File.separator + "unalign.apk";
-                        runCommand(zipalign + " -p -v 4 " + fileAPK.getAbsolutePath() + " " + alignAPK);
-                        System.out.println("对齐" + (new File(alignAPK).exists() ? "成功：" : "失败：") + alignAPK);
                         //签名
                         String outPath = outDir.getAbsolutePath() + File.separator + outFileName + "_" + new File(fileDir).getName() + "_signed.apk";
-                        runCommand(java + " -jar " + apksigner + " sign --key " + filePk8.getAbsolutePath() + " --cert " + filePem.getAbsolutePath() + " --out " + outPath + " " + alignAPK);
+                        runCommand(java + " -jar " + apksigner + " sign --key " + filePk8.getAbsolutePath() + " --cert " + filePem.getAbsolutePath() + " --out " + outPath + " " + apkFile);
 //                        System.out.println("签名文件：" + outPath);
                         updateLog(new File(fileDir).getName() + " 签名成功\n" + outPath);
-                        deleteFile(outDir, alignAPK);
                     } else {
                         updateLog(fileAPK + " 请选择一个APK");
                     }
@@ -292,8 +278,6 @@ public class Controller implements Initializable {
         }
         String alignAPK = outDir.getAbsolutePath() + File.separator + "unalign.apk";
         if (fileAPK.exists()) {
-            System.out.println("对齐文件：" + alignAPK);
-            runCommand(zipalign + " -p -v 4 " + fileAPK.getAbsolutePath() + " " + alignAPK);
             ObservableList<Node> children = platforms.getChildren();
             for (int i = 0; i < children.size(); i++) {
                 Node child = children.get(i);
