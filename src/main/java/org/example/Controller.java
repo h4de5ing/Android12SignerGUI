@@ -254,6 +254,7 @@ public class Controller implements Initializable {
                         runCommand(java + " -jar " + apksigner + " sign --key " + filePk8.getAbsolutePath() + " --cert " + filePem.getAbsolutePath() + " --out " + outPath + " " + apkFile);
 //                        System.out.println("签名文件：" + outPath);
                         updateLog(new File(fileDir).getName() + " 签名成功\n" + outPath);
+                        deleteFile(outDir, outPath);
                     } else {
                         updateLog(fileAPK + " 请选择一个APK");
                     }
@@ -291,6 +292,9 @@ public class Controller implements Initializable {
                             //签名
                             runCommand(java + " -jar " + apksigner + " sign --key " + filePk8.getAbsolutePath() + " --cert " + filePem.getAbsolutePath() + " --out " + outPath + " " + fileAPK);
                             updateLog(checkBox.getText() + " 签名成功\n" + outPath);
+                            if (i == (children.size() - 1)) {
+                                deleteFile(outDir, outPath);
+                            }
                         } else {
                             updateLog(filePem + " 文件不存在");
                         }
