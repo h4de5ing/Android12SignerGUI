@@ -17,7 +17,7 @@ public class PP {
                 if (file.exists()) properties.load(new FileInputStream(file));
                 else properties.load(PP.class.getClassLoader().getResourceAsStream(fileName));
             } catch (Exception e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
         }
         return pp;

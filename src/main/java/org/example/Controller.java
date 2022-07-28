@@ -197,7 +197,7 @@ public class Controller implements Initializable {
             File file = new File(path);
             isExists = file.exists();
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
         return isExists;
     }
