@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
 
@@ -51,7 +52,6 @@ public class Controller implements Initializable {
     File filePem;
     File fileAPK;//待签名的apk文件
     String outFileName = "out";
-    String plName = "T00";//平台名称
     boolean idsig = false;//是否删除
 
     @Override
@@ -70,7 +70,6 @@ public class Controller implements Initializable {
             File file = dc.showDialog(new Stage());
             if (file != null) {
                 dirSign = file;
-                plName = dirSign.getName();
                 sign_file.setText(file.getAbsolutePath());
                 filePk8 = new File(file.getAbsoluteFile() + File.separator + pk8);
                 if (!filePk8.exists()) {
@@ -114,18 +113,13 @@ public class Controller implements Initializable {
     private void initEnv() {
         String javaPath = findJavaPath();
         String javaPath2 = PP.getInstance().getKey("java");
-        if (checkPath(javaPath2)) {
-            java = javaPath2;
-        } else {
-            if (checkPath(javaPath)) java = javaPath;
-        }
-        String apksignerPath = fileExeFilePath("apksigner.jar");
-        String apksignerPath2 = PP.getInstance().getKey("apksigner");
-        if (checkPath(apksignerPath)) {
-            apksigner = apksignerPath;
-        } else {
-            if (checkPath(apksignerPath2)) apksigner = apksignerPath2;
-        }
+        if (checkPath(javaPath2)) java = javaPath2;
+        else if (checkPath(javaPath)) java = javaPath;
+        String apksignerPath = new File("apksigner.jar").getAbsolutePath();
+        String apksignerPath2 = fileExeFilePath("apksigner.jar");
+        if (checkPath(apksignerPath)) apksigner = apksignerPath;
+        else if (checkPath(apksignerPath2)) apksigner = apksignerPath2;
+        else System.err.println("签名工具apksigner.jar 没有找到...【" + apksignerPath + "】不存在");
         String isDelete = PP.getInstance().getKey("idsig");
         try {
             idsig = Boolean.parseBoolean(isDelete);
@@ -194,18 +188,10 @@ public class Controller implements Initializable {
 
     private void updateStartStatus() {
         start.setDisable(false);
-        if (dirSign == null || !dirSign.exists()) {
-            start.setDisable(false);
-        }
-        if (filePk8 == null || !filePk8.exists()) {
-            start.setDisable(false);
-        }
-        if (filePem == null || !filePem.exists()) {
-            start.setDisable(false);
-        }
-        if (fileAPK == null || !fileAPK.exists()) {
-            start.setDisable(false);
-        }
+        if (dirSign == null || !dirSign.exists()) start.setDisable(false);
+        if (filePk8 == null || !filePk8.exists()) start.setDisable(false);
+        if (filePem == null || !filePem.exists()) start.setDisable(false);
+        if (fileAPK == null || !fileAPK.exists()) start.setDisable(false);
         platforms.setVisible(multi.isSelected());
     }
 
@@ -254,7 +240,7 @@ public class Controller implements Initializable {
                         runCommand(java + " -jar " + apksigner + " sign --key " + filePk8.getAbsolutePath() + " --cert " + filePem.getAbsolutePath() + " --out " + outPath + " " + apkFile);
 //                        System.out.println("签名文件：" + outPath);
                         updateLog(new File(fileDir).getName() + " 签名成功\n" + outPath);
-                        deleteFile(outDir, outPath);
+                        deleteFile(outDir);
                     } else {
                         updateLog(fileAPK + " 请选择一个APK");
                     }
@@ -292,9 +278,7 @@ public class Controller implements Initializable {
                             //签名
                             runCommand(java + " -jar " + apksigner + " sign --key " + filePk8.getAbsolutePath() + " --cert " + filePem.getAbsolutePath() + " --out " + outPath + " " + fileAPK);
                             updateLog(checkBox.getText() + " 签名成功\n" + outPath);
-                            if (i == (children.size() - 1)) {
-                                deleteFile(outDir, outPath);
-                            }
+                            if (i == (children.size() - 1)) deleteFile(outDir);
                         } else {
                             updateLog(filePem + " 文件不存在");
                         }
@@ -308,14 +292,10 @@ public class Controller implements Initializable {
         }
     }
 
-    private void deleteFile(File outDir, String alignAPK) {
-        boolean deleteResult = new File(alignAPK).delete();
-        System.out.println(new File(alignAPK).getAbsolutePath() + (deleteResult ? " 删除成功" : " 删除失败"));
+    private void deleteFile(File outDir) {
         if (idsig) {
-            for (File file : outDir.listFiles()) {
-                if (file.getAbsolutePath().endsWith(".idsig")) {
-                    file.delete();
-                }
+            for (File file : Objects.requireNonNull(outDir.listFiles())) {
+                if (file.getAbsolutePath().endsWith(".idsig")) file.delete();
             }
         }
     }
