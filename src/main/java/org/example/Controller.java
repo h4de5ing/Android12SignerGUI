@@ -12,10 +12,7 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URL;
 import java.util.Objects;
 import java.util.ResourceBundle;
@@ -41,6 +38,8 @@ public class Controller implements Initializable {
     @FXML
     CheckBox multi;
     @FXML
+    CheckBox cbIdsig;
+    @FXML
     FlowPane platforms;
     String pk8 = "platform.pk8";
     String pem = "platform.x509.pem";
@@ -52,15 +51,18 @@ public class Controller implements Initializable {
     File filePem;
     File fileAPK;//待签名的apk文件
     String outFileName = "out";
-    boolean idsig = false;//是否删除
+    boolean idsig = true;//是否删除
+    boolean isWindow = true;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         initEnv();
+        cbIdsig.setSelected(true);
         cbb.setEditable(true);
         cbb.valueProperty().addListener((observableValue, oldValue, newValue) -> sign_file.setText(allFileList.get(newValue)));
         initSignDir();
         multi.selectedProperty().addListener((observableValue, oldValue, newValue) -> platforms.setVisible(newValue));
+        cbIdsig.selectedProperty().addListener((observableValue, oldValue, newValue) -> idsig = newValue);
         sign_file.textProperty().addListener((observableValue, s, newValue) -> updateStartStatus());
         apk_path.textProperty().addListener((observableValue, s, newValue) -> updateStartStatus());
         clear.setOnAction(event -> sign_file.setText(""));
@@ -103,29 +105,26 @@ public class Controller implements Initializable {
             updateStartStatus();
         });
         start.setOnAction(event -> {
-            if (multi.isSelected())
-                multiSign();
+            if (multi.isSelected()) multiSign();
             else sign();
         });
     }
 
     //初始化环境变量
     private void initEnv() {
+        isWindow = System.getProperty("os.name").startsWith("Windows");
         String javaPath = findJavaPath();
         String javaPath2 = PP.getInstance().getKey("java");
+        String javaPath3 = findCurrentPath();
+        if (checkPath(javaPath3)) java = javaPath3;
         if (checkPath(javaPath2)) java = javaPath2;
         else if (checkPath(javaPath)) java = javaPath;
+        else System.err.println("java路径 没有找到...【" + javaPath3 + "】不存在");
         String apksignerPath = new File("apksigner.jar").getAbsolutePath();
         String apksignerPath2 = fileExeFilePath("apksigner.jar");
         if (checkPath(apksignerPath)) apksigner = apksignerPath;
         else if (checkPath(apksignerPath2)) apksigner = apksignerPath2;
         else System.err.println("签名工具apksigner.jar 没有找到...【" + apksignerPath + "】不存在");
-        String isDelete = PP.getInstance().getKey("idsig");
-        try {
-            idsig = Boolean.parseBoolean(isDelete);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         System.out.println(java);
         System.out.println(apksigner);
     }
@@ -150,7 +149,6 @@ public class Controller implements Initializable {
 
     private String findJavaPath() {
         String result = "";
-        boolean isWindow = System.getProperty("os.name").startsWith("Windows");
         //在系统环境变量里面找
 //        Iterator it = System.getenv().entrySet().iterator();
 //        while (it.hasNext()) {
@@ -173,6 +171,24 @@ public class Controller implements Initializable {
             }
         }
         return result;
+    }
+
+    private String findCurrentPath() {
+        try {
+            findFile(new File("."), (isWindow ? "java.exe" : "java"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return getAbsolutePath;
+    }
+
+    private static String getAbsolutePath = "";
+
+    private static void findFile(File file, String filename) throws IOException {
+        for (File listFile : Objects.requireNonNull(file.listFiles())) {
+            if (listFile.isDirectory()) findFile(listFile, filename);
+            else if (listFile.getName().equals(filename)) getAbsolutePath = listFile.getCanonicalPath();
+        }
     }
 
     private boolean checkPath(String path) {
@@ -295,7 +311,10 @@ public class Controller implements Initializable {
     private void deleteFile(File outDir) {
         if (idsig) {
             for (File file : Objects.requireNonNull(outDir.listFiles())) {
-                if (file.getAbsolutePath().endsWith(".idsig")) file.delete();
+                if (file.getAbsolutePath().endsWith(".idsig")) {
+                    boolean deleteResult = file.delete();
+                    System.out.println(file.getName() + (deleteResult ? " 删除成功" : " 删除失败"));
+                }
             }
         }
     }

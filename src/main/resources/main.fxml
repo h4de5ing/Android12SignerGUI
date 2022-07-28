@@ -38,6 +38,7 @@
                 </VBox>
             </HBox>
             <VBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0">
+                <CheckBox fx:id="cbIdsig" text="删除idsig"/>
                 <CheckBox fx:id="multi" text="多平台打包"/>
                 <FlowPane fx:id="platforms" prefWidth="350.0" BorderPane.alignment="CENTER">
                 </FlowPane>
