@@ -76,7 +76,15 @@ public class Controller implements Initializable {
             dc.setTitle("选择一个文件夹");
             dc.setInitialDirectory(new File("./"));
             File file = dc.showDialog(new Stage());
-            if (file != null) dirSign = file;
+            if (file != null) {
+                dirSign = file;
+                sign_file.setText(dirSign.getAbsolutePath());
+                try {
+                    cbb.valueProperty().set(dirSign.getName());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
             updateStartStatus();
         });
         open_apk_path.setOnAction(event -> {
@@ -364,9 +372,11 @@ public class Controller implements Initializable {
                 File platformP12 = new File(new File(fileDir).getAbsoluteFile() + File.separator + "platform.p12");
                 runCommand(openssl + " pkcs12 -export -in  " + filePem.getAbsolutePath() + " -out " + platformP12.getAbsolutePath() + " -inkey  " + platformPem.getAbsolutePath() + " -password pass:android -name android");
                 runCommand(keytool + " -importkeystore -deststorepass android -destkeystore " + platformJks.getAbsolutePath() + " -srckeystore " + platformP12.getAbsolutePath() + " -srcstoretype PKCS12 -srcstorepass android");
-                updateLog("转换成功");
-                platformPem.delete();
-                platformP12.delete();
+                if (platformJks.exists()) {
+                    updateLog("转换成功");
+                    platformPem.delete();
+                    platformP12.delete();
+                }
             }
         } catch (Exception e) {
             updateLog("发生异常:" + e.getMessage());
