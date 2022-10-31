@@ -114,17 +114,16 @@ public class Controller implements Initializable {
     private void initEnv() {
         isWindow = System.getProperty("os.name").startsWith("Windows");
         String javaPath = findJavaPath();
-        String javaPath2 = PP.getInstance().getKey("java");
-        String javaPath3 = findCurrentPath();
-        if (checkPath(javaPath3)) java = javaPath3;
-        if (checkPath(javaPath2)) java = javaPath2;
+        String javaPath1 = findCurrentPath();
+        if (checkPath(javaPath1)) java = javaPath1;
         else if (checkPath(javaPath)) java = javaPath;
-        else System.err.println("java路径 没有找到...【" + javaPath3 + "】不存在");
+        else System.err.println("java路径 没有找到...【" + javaPath1 + "】不存在");
         String apksignerPath = new File("apksigner.jar").getAbsolutePath();
         String apksignerPath2 = fileExeFilePath("apksigner.jar");
         if (checkPath(apksignerPath)) apksigner = apksignerPath;
         else if (checkPath(apksignerPath2)) apksigner = apksignerPath2;
         else System.err.println("签名工具apksigner.jar 没有找到...【" + apksignerPath + "】不存在");
+        System.out.println("如果签名工具在使用中有什么问题请提供问题截图或者日志联系开发者:moxi1992@gmail.com");
         System.out.println(java);
         System.out.println(apksigner);
     }

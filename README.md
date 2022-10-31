@@ -7,6 +7,7 @@
 ##　TODO 　
 - [ ] jks签名文件支持　　
 - [ ] v1 v2 v3 v4支持
+- [ ] 使用授权
 
 
 ![截图](screenshots.png)
