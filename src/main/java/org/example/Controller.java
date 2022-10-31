@@ -14,6 +14,8 @@ import javafx.stage.Stage;
 
 import java.io.*;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
@@ -23,6 +25,8 @@ public class Controller implements Initializable {
     ComboBox<String> cbb;
     @FXML
     Button clear;
+    @FXML
+    Button jks;
     @FXML
     TextField sign_file;
     @FXML
@@ -46,9 +50,9 @@ public class Controller implements Initializable {
     //对齐命令的路径
     String apksigner = "";
     String java = "";
+    String openssl = "";
+    String keytool = "";
     File dirSign;//sign 文件夹
-    File filePk8;
-    File filePem;
     File fileAPK;//待签名的apk文件
     String outFileName = "out";
     boolean idsig = true;//是否删除
@@ -66,22 +70,13 @@ public class Controller implements Initializable {
         sign_file.textProperty().addListener((observableValue, s, newValue) -> updateStartStatus());
         apk_path.textProperty().addListener((observableValue, s, newValue) -> updateStartStatus());
         clear.setOnAction(event -> sign_file.setText(""));
+        jks.setOnAction(event -> jks());
         open_sign_file.setOnAction(event -> {
             DirectoryChooser dc = new DirectoryChooser();
             dc.setTitle("选择一个文件夹");
+            dc.setInitialDirectory(new File("./"));
             File file = dc.showDialog(new Stage());
-            if (file != null) {
-                dirSign = file;
-                sign_file.setText(file.getAbsolutePath());
-                filePk8 = new File(file.getAbsoluteFile() + File.separator + pk8);
-                if (!filePk8.exists()) {
-                    updateLog(filePk8 + " 文件不存在");
-                }
-                filePem = new File(file.getAbsoluteFile() + File.separator + pem);
-                if (!filePem.exists()) {
-                    updateLog(filePem + " 文件不存在");
-                }
-            }
+            if (file != null) dirSign = file;
             updateStartStatus();
         });
         open_apk_path.setOnAction(event -> {
@@ -108,13 +103,16 @@ public class Controller implements Initializable {
             if (multi.isSelected()) multiSign();
             else sign();
         });
+        updateStartStatus();
     }
 
     //初始化环境变量
     private void initEnv() {
         isWindow = System.getProperty("os.name").startsWith("Windows");
         String javaPath = findJavaPath();
-        String javaPath1 = findCurrentPath();
+        String javaPath1 = findCurrentPath("java");
+        openssl = findCurrentPath("openssl");
+        keytool = findCurrentPath("keytool");
         if (checkPath(javaPath1)) java = javaPath1;
         else if (checkPath(javaPath)) java = javaPath;
         else System.err.println("java路径 没有找到...【" + javaPath1 + "】不存在");
@@ -126,6 +124,8 @@ public class Controller implements Initializable {
         System.out.println("如果签名工具在使用中有什么问题请提供问题截图或者日志联系开发者:moxi1992@gmail.com");
         System.out.println(java);
         System.out.println(apksigner);
+        System.out.println(openssl);
+        System.out.println(keytool);
     }
 
     //查找执行文件
@@ -172,9 +172,9 @@ public class Controller implements Initializable {
         return result;
     }
 
-    private String findCurrentPath() {
+    private String findCurrentPath(String name) {
         try {
-            findFile(new File("."), (isWindow ? "java.exe" : "java"));
+            findFile(new File("."), (isWindow ? name + ".exe" : name));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -202,12 +202,23 @@ public class Controller implements Initializable {
     }
 
     private void updateStartStatus() {
-        start.setDisable(false);
-        if (dirSign == null || !dirSign.exists()) start.setDisable(false);
-        if (filePk8 == null || !filePk8.exists()) start.setDisable(false);
-        if (filePem == null || !filePem.exists()) start.setDisable(false);
-        if (fileAPK == null || !fileAPK.exists()) start.setDisable(false);
+        if (fileAPK != null) start.setDisable(!fileAPK.exists());
+        else start.setDisable(true);
         platforms.setVisible(multi.isSelected());
+        if (System.currentTimeMillis() >= getExpire("20240101")) {
+            start.setDisable(true);
+            updateLog("授权过期，请联系开发者重新获取授权：moxi1992@gmail.com");
+        }
+    }
+
+    private long getExpire(String date) {
+        try {
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(new SimpleDateFormat("yyyyMMdd").parse(date));
+            return cal.getTimeInMillis();
+        } catch (Exception ignored) {
+        }
+        return getExpire("20240101");
     }
 
     private final TreeMap<String, String> allFileList = new TreeMap<>();
@@ -230,7 +241,6 @@ public class Controller implements Initializable {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            updateStartStatus();
         }
     }
 
@@ -244,8 +254,8 @@ public class Controller implements Initializable {
             System.out.println(outDir.getAbsolutePath() + (result ? " 创建成功" : "创建失败"));
         }
         if (new File(fileDir).exists()) {
-            filePk8 = new File(new File(fileDir).getAbsoluteFile() + File.separator + pk8);
-            filePem = new File(new File(fileDir).getAbsoluteFile() + File.separator + pem);
+            File filePk8 = new File(new File(fileDir).getAbsoluteFile() + File.separator + pk8);
+            File filePem = new File(new File(fileDir).getAbsoluteFile() + File.separator + pem);
             if (filePk8.exists()) {
                 if (filePem.exists()) {
                     fileAPK = new File(apkFile);
@@ -266,7 +276,7 @@ public class Controller implements Initializable {
                 updateLog(filePk8 + " 文件不存在");
             }
         } else {
-            updateLog(fileDir + " \n路径不存在");
+            updateLog(fileDir + " \n签名文件路径不存在");
         }
     }
 
@@ -337,5 +347,30 @@ public class Controller implements Initializable {
 
     private void updateLog(String message) {
         Platform.runLater(() -> log.appendText(message + "\n"));
+    }
+
+    private void jks() {
+        try {
+            String fileDir = sign_file.getText();
+            File platformJks = new File(new File(fileDir).getAbsoluteFile() + File.separator + "platform.jks");
+            if (platformJks.exists()) {
+                updateLog(platformJks.getAbsolutePath() + " 文件已经存在，无需转换");
+            } else {
+                File filePk8 = new File(new File(fileDir).getAbsoluteFile() + File.separator + pk8);
+                File filePem = new File(new File(fileDir).getAbsoluteFile() + File.separator + pem);
+
+                File platformPem = new File(new File(fileDir).getAbsoluteFile() + File.separator + "platform.pem");
+                runCommand(openssl + " pkcs8 -inform DER -nocrypt -in " + filePk8.getAbsolutePath() + " -out " + platformPem.getAbsolutePath());
+                File platformP12 = new File(new File(fileDir).getAbsoluteFile() + File.separator + "platform.p12");
+                runCommand(openssl + " pkcs12 -export -in  " + filePem.getAbsolutePath() + " -out " + platformP12.getAbsolutePath() + " -inkey  " + platformPem.getAbsolutePath() + " -password pass:android -name android");
+                runCommand(keytool + " -importkeystore -deststorepass android -destkeystore " + platformJks.getAbsolutePath() + " -srckeystore " + platformP12.getAbsolutePath() + " -srcstoretype PKCS12 -srcstorepass android");
+                updateLog("转换成功");
+                platformPem.delete();
+                platformP12.delete();
+            }
+        } catch (Exception e) {
+            updateLog("发生异常:" + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

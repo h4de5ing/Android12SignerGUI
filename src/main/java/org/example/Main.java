@@ -24,7 +24,7 @@ public class Main extends Application {
         stage.getIcons().add(new Image("/icon_apk.png"));
 //        stage.setAlwaysOnTop(true);//一直悬浮
         stage.setResizable(true);//不准拖动改变大小
-        stage.setTitle("Android12 签名工具v1.2 dev by (https://github.com/h4de5ing)");
+        stage.setTitle("Android12 签名工具 v1.2 create by (https://github.com/h4de5ing)");
         stage.setScene(new Scene(root, width, height));
         Rectangle2D rectangle2D = Screen.getPrimary().getBounds();
         stage.setX(rectangle2D.getWidth() / 2.0 - (width / 2.0));
