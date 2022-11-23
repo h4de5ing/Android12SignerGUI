@@ -1,14 +1,20 @@
-## Android 12签名工具  
+## Android 12签名工具
+
 - ~~通过zipalign.exe自动对齐APK~~
-- 通过apksigner进行v1 v2签名  
-- 批量进行多平台签名  
-- 采用platform.pk8和platform.x509.pem 进行签名  
+- 通过apksigner进行v1 v2签名
+- 批量进行多平台签名
+- 采用platform.pk8和platform.x509.pem 进行签名
 - v1.2增加工具授权使用
 - 增加pk8和pem转换成jks
 
-##　TODO 　
-- [ ] jks签名文件支持　　
-- [ ] v1 v2 v3 v4支持
+## TODO 　
 
+- [ ] 增加服务器端运行，支持接口自动签名升级app
+- [ ] apk新版本接口，如果服务器端没有apk，需要待添加
+- [ ] 上传新平台的签名
+- [ ] 上传未签名apk接口
+- [ ] webhook 从git服务器拉去apk
+- [ ] jks签名文件支持- [ ] v1 v2 v3 v4支持
 
-![截图](screenshots.png)
+![新版本](screenshots/img.png)
+![截图](screenshots/screenshots.png)
