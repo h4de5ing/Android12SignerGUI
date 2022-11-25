@@ -1,5 +1,6 @@
-package org.example.api;
+package org.example.api.config;
 
+import org.example.api.bean.BaseBusinessException;
 import org.example.api.bean.DefaultError;
 import org.example.api.bean.Response;
 import org.springframework.http.HttpStatus;
@@ -20,20 +21,20 @@ public class ExceptionControllerAdvice {
         if (exception instanceof BaseBusinessException) {
             BaseBusinessException bbe = (BaseBusinessException) exception;
             response.setCode(bbe.getError().getErrorCode());
-            response.setData(bbe.getError().getErrorMessage());
+            response.setMessage(bbe.getError().getErrorMessage());
             if (exception.getMessage() != null) {
                 response.setData(exception.getMessage());
             }
         } else if (exception instanceof BindException) {
             BindException bindException = (BindException) exception;
             response.setCode(DefaultError.PARAMETER_ERROR.getErrorCode());
-            response.setData(DefaultError.PARAMETER_ERROR.getErrorMessage());
+            response.setMessage(DefaultError.PARAMETER_ERROR.getErrorMessage());
             FieldError fieldError = bindException.getBindingResult().getFieldError();
-            response.setMessage(fieldError.getDefaultMessage());
+            response.setData(fieldError.getDefaultMessage());
         } else {
             exception.printStackTrace();
             response.setCode(DefaultError.SYSTEM_INTERNAL_ERROR.getErrorCode());
-            response.setData(DefaultError.SYSTEM_INTERNAL_ERROR.getErrorMessage());
+            response.setMessage(DefaultError.SYSTEM_INTERNAL_ERROR.getErrorMessage());
         }
         return new ResponseEntity(response, HttpStatus.LOOP_DETECTED);
     }

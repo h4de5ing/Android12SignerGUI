@@ -1,4 +1,4 @@
-package org.example.api;
+package org.example.api.bean;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

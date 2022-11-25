@@ -1,8 +1,6 @@
 package org.example.api;
 
-import org.example.api.bean.RequestVersion;
-import org.example.api.bean.Response;
-import org.example.api.bean.SuccessResponse;
+import org.example.api.bean.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -37,7 +35,7 @@ public class APIController {
 
     @PostMapping("/upload")
     public ResponseEntity<SuccessResponse> upload(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()) throw new BaseBusinessException("文件为空");
+        if (file.isEmpty()) throw new BaseBusinessException(DefaultError.PARAMETER_EMPTY);
         String fileName = file.getOriginalFilename();
         String filePath = "./baseApk";
         File fileDir = new File(filePath);
@@ -54,7 +52,7 @@ public class APIController {
     @RequestMapping("/getVersion")
     public String getVersion(@Validated RequestVersion requestVersion) {
         System.out.println("发送了请求:" + requestVersion);
-        if (requestVersion == null) throw new BaseBusinessException("参数错误");
+        if (requestVersion == null) throw new BaseBusinessException(DefaultError.PARAMETER_ERROR);
         return requestVersion.toString();
     }
 }
