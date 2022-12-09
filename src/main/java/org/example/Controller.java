@@ -11,9 +11,11 @@ import javafx.scene.layout.FlowPane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.example.api.utils.PemUtils;
 
 import java.io.*;
 import java.net.URL;
+import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Objects;
@@ -27,6 +29,8 @@ public class Controller implements Initializable {
     Button clear;
     @FXML
     Button jks;
+    @FXML
+    Button hash;
     @FXML
     TextField sign_file;
     @FXML
@@ -71,6 +75,7 @@ public class Controller implements Initializable {
         apk_path.textProperty().addListener((observableValue, s, newValue) -> updateStartStatus());
         clear.setOnAction(event -> sign_file.setText(""));
         jks.setOnAction(event -> jks());
+        hash.setOnAction(event -> hash());
         open_sign_file.setOnAction(event -> {
             DirectoryChooser dc = new DirectoryChooser();
             dc.setTitle("选择一个文件夹");
@@ -381,6 +386,22 @@ public class Controller implements Initializable {
         } catch (Exception e) {
             updateLog("发生异常:" + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    //查看签名文件hash
+    private void hash() {
+        String fileDir = sign_file.getText();
+        if (new File(fileDir).exists()) {
+            File filePem = new File(new File(fileDir).getAbsoluteFile() + File.separator + pem);
+            if (filePem.exists()) {
+                try {
+                    X509Certificate certObject = PemUtils.getCertObject(filePem.getAbsolutePath());
+                    updateLog(filePem.getAbsolutePath()+"\nmd5:" + PemUtils.getThumbprintMD5(certObject)+"\nsha1:"+ PemUtils.getThumbprintSHA1(certObject)+"\nsha256:"+ PemUtils.getThumbprintSHA256(certObject));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 }

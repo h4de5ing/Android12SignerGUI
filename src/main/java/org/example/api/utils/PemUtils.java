@@ -49,9 +49,39 @@ public class PemUtils {
         }
     }
 
+    /**
+     * 用下面getThumbprintSHA1方法替代
+     *
+     * @param cert
+     * @return
+     * @throws NoSuchAlgorithmException
+     * @throws CertificateEncodingException
+     */
+    @Deprecated
     public static String getThumbprint(X509Certificate cert) throws
             NoSuchAlgorithmException, CertificateEncodingException {
         MessageDigest md = MessageDigest.getInstance("SHA-1");
+        md.update(cert.getEncoded());
+        return DatatypeConverter.printHexBinary(md.digest()).toLowerCase();
+    }
+
+    public static String getThumbprintSHA1(X509Certificate cert) throws
+            NoSuchAlgorithmException, CertificateEncodingException {
+        MessageDigest md = MessageDigest.getInstance("SHA-1");
+        md.update(cert.getEncoded());
+        return DatatypeConverter.printHexBinary(md.digest()).toLowerCase();
+    }
+
+    public static String getThumbprintMD5(X509Certificate cert) throws
+            NoSuchAlgorithmException, CertificateEncodingException {
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        md.update(cert.getEncoded());
+        return DatatypeConverter.printHexBinary(md.digest()).toLowerCase();
+    }
+
+    public static String getThumbprintSHA256(X509Certificate cert) throws
+            NoSuchAlgorithmException, CertificateEncodingException {
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
         md.update(cert.getEncoded());
         return DatatypeConverter.printHexBinary(md.digest()).toLowerCase();
     }

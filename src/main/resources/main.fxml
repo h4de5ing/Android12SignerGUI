@@ -15,6 +15,7 @@
                 <ComboBox fx:id="cbb"/>
                 <Button fx:id="clear" mnemonicParsing="false" text="清空签名"/>
                 <Button fx:id="jks" mnemonicParsing="false" text="转换成jks"/>
+                <Button fx:id="hash" mnemonicParsing="false" text="查看签名hash"/>
             </HBox>
             <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="300.0" spacing="10">
                 <VBox>
