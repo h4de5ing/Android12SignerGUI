@@ -15,7 +15,7 @@
                 <ComboBox fx:id="cbb"/>
                 <Button fx:id="clear" mnemonicParsing="false" text="清空签名"/>
                 <Button fx:id="jks" mnemonicParsing="false" text="转换成jks"/>
-                <Button fx:id="hash" mnemonicParsing="false" text="查看签名hash"/>
+                <Button fx:id="hash" mnemonicParsing="false" text="查看文件签名"/>
             </HBox>
             <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="300.0" spacing="10">
                 <VBox>
@@ -32,7 +32,8 @@
                 <VBox>
                     <HBox alignment="CENTER" spacing="10">
                         <Label text="APK路径"/>
-                        <TextField fx:id="apk_path" prefWidth="400.0"/>
+                        <TextField fx:id="apk_path" prefWidth="350.0"/>
+                        <Button fx:id="check_apk" mnemonicParsing="false" disable="true" text="查看APK签名"/>
                     </HBox>
                     <HBox alignment="TOP_RIGHT">
                         <Button fx:id="open_apk_path" mnemonicParsing="false" text="浏览"/>

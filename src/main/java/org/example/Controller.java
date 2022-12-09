@@ -40,6 +40,8 @@ public class Controller implements Initializable {
     @FXML
     Button open_apk_path;
     @FXML
+    Button check_apk;
+    @FXML
     Button start;
     @FXML
     TextArea log;
@@ -76,6 +78,7 @@ public class Controller implements Initializable {
         clear.setOnAction(event -> sign_file.setText(""));
         jks.setOnAction(event -> jks());
         hash.setOnAction(event -> hash());
+        check_apk.setOnAction(event -> printSign());
         open_sign_file.setOnAction(event -> {
             DirectoryChooser dc = new DirectoryChooser();
             dc.setTitle("选择一个文件夹");
@@ -99,6 +102,7 @@ public class Controller implements Initializable {
             File file = fileChooser.showOpenDialog(new Stage());
             if (file != null) {
                 fileAPK = file;
+                check_apk.setDisable(false);
                 apk_path.setText(file.getAbsolutePath());
                 try {
                     outFileName = file.getName().split("\\.apk")[0];
@@ -231,7 +235,7 @@ public class Controller implements Initializable {
             return cal.getTimeInMillis();
         } catch (Exception ignored) {
         }
-        return getExpire("20240101");
+        return getExpire("20240601");
     }
 
     private final TreeMap<String, String> allFileList = new TreeMap<>();
@@ -279,18 +283,10 @@ public class Controller implements Initializable {
 //                        System.out.println("签名文件：" + outPath);
                         updateLog(new File(fileDir).getName() + " 签名成功\n" + outPath);
                         deleteFile(outDir);
-                    } else {
-                        updateLog(fileAPK + " 请选择一个APK");
-                    }
-                } else {
-                    updateLog(filePem + " 文件不存在");
-                }
-            } else {
-                updateLog(filePk8 + " 文件不存在");
-            }
-        } else {
-            updateLog(fileDir + " \n签名文件路径不存在");
-        }
+                    } else updateLog(fileAPK + " 请选择一个APK");
+                } else updateLog(filePem + " 文件不存在");
+            } else updateLog(filePk8 + " 文件不存在");
+        } else updateLog(fileDir + " \n签名文件路径不存在");
     }
 
     private void multiSign() {
@@ -317,17 +313,11 @@ public class Controller implements Initializable {
                             runCommand(java + " -jar " + apksigner + " sign --key " + filePk8.getAbsolutePath() + " --cert " + filePem.getAbsolutePath() + " --out " + outPath + " " + fileAPK);
                             updateLog(checkBox.getText() + " 签名成功\n" + outPath);
                             if (i == (children.size() - 1)) deleteFile(outDir);
-                        } else {
-                            updateLog(filePem + " 文件不存在");
-                        }
-                    } else {
-                        updateLog(filePk8 + " 文件不存在");
-                    }
+                        } else updateLog(filePem + " 文件不存在");
+                    } else updateLog(filePk8 + " 文件不存在");
                 }
             }
-        } else {
-            updateLog(fileAPK + " 请选择一个APK");
-        }
+        } else updateLog(fileAPK + " 请选择一个APK");
     }
 
     private void deleteFile(File outDir) {
@@ -345,7 +335,8 @@ public class Controller implements Initializable {
         try {
             Process process = Runtime.getRuntime().exec(command);
             InputStream is = process.getInputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            //TODO 在Mac系统上测试编码是否会有乱码问题
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is, "GBK"));
             String outInfo;
             while ((outInfo = reader.readLine()) != null) updateLog(outInfo);
             process.waitFor();
@@ -397,11 +388,19 @@ public class Controller implements Initializable {
             if (filePem.exists()) {
                 try {
                     X509Certificate certObject = PemUtils.getCertObject(filePem.getAbsolutePath());
-                    updateLog(filePem.getAbsolutePath()+"\nmd5:" + PemUtils.getThumbprintMD5(certObject)+"\nsha1:"+ PemUtils.getThumbprintSHA1(certObject)+"\nsha256:"+ PemUtils.getThumbprintSHA256(certObject));
+                    updateLog(filePem.getAbsolutePath() + "\nmd5:" + PemUtils.getThumbprintMD5(certObject) + "\nsha1:" + PemUtils.getThumbprintSHA1(certObject) + "\nsha256:" + PemUtils.getThumbprintSHA256(certObject) + "\n");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
+        }
+    }
+
+    private void printSign() {
+        String apkFile = apk_path.getText();
+        File fileAPK = new File(apkFile);
+        if (fileAPK.exists()) {
+            runCommand(keytool + " -printcert -jarfile " + apkFile);
         }
     }
 }
