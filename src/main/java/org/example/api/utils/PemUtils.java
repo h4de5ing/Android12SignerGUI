@@ -1,6 +1,7 @@
 package org.example.api.utils;
 
 import org.example.api.APIController;
+import org.example.api.enties.DBAPPBean;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.File;
@@ -18,28 +19,27 @@ import java.util.jar.JarFile;
 
 public class PemUtils {
     public static void run() {
-//        File file = new File("SignFiles");
-//        pemList.clear();
-//        getAllPem(file);
-//        for (File listFile : pemList) {
-//            try {
-//                X509Certificate certObject = getCertObject(listFile.getAbsolutePath());
-//                String print = getThumbprint(certObject);
-//                System.out.println(listFile.getParent() + " [" + print + "]");
-//                APIController.map.put(print, listFile.getParent());
-//            } catch (Exception e) {
-//                //System.err.println("发生异常:" + listFile.getAbsolutePath());
-//                //e.printStackTrace();
-//            }
-//        }
+        File file = new File("SignFiles");
+        pemList.clear();
+        getAllPem(file);
+        for (File listFile : pemList) {
+            try {
+                X509Certificate certObject = getCertObject(listFile.getAbsolutePath());
+                String print = getThumbprintMD5(certObject);
+                System.out.println(listFile.getAbsolutePath() + " [" + print + "]");
+                APIController.map.put(print, listFile.getParent());
+            } catch (Exception e) {
+                //System.err.println("发生异常:" + listFile.getAbsolutePath());
+                //e.printStackTrace();
+            }
+        }
         File apkFile = new File("baseApk");
         apkList.clear();
         getAllAPK(apkFile);
         for (File listFile : apkList) {
             try {
-                System.out.println(listFile.getAbsoluteFile());
-                String md5 = APKUtils.getApkSignatureMD5(listFile.getAbsolutePath());
-                System.out.println(md5);
+                DBAPPBean bean = APKUtils.getOneApkInfo(listFile.getAbsolutePath());
+                if (bean != null) APIController.appList.add(bean);
             } catch (Exception e) {
                 //System.err.println("发生异常:" + listFile.getAbsolutePath());
                 //e.printStackTrace();
@@ -53,7 +53,7 @@ public class PemUtils {
     public static void getAllPem(File file) {
         for (File listFile : Objects.requireNonNull(file.listFiles())) {
             if (listFile.isDirectory()) getAllPem(listFile);
-            else if (listFile.getName().contains(".pem")) pemList.add(listFile.getAbsoluteFile());
+            else if (listFile.getName().contains("platform.x509.pem")) pemList.add(listFile.getAbsoluteFile());
         }
     }
 
@@ -71,38 +71,19 @@ public class PemUtils {
         }
     }
 
-    /**
-     * 用下面getThumbprintSHA1方法替代
-     *
-     * @param cert
-     * @return
-     * @throws NoSuchAlgorithmException
-     * @throws CertificateEncodingException
-     */
-    @Deprecated
-    public static String getThumbprint(X509Certificate cert) throws
-            NoSuchAlgorithmException, CertificateEncodingException {
+    public static String getThumbprintSHA1(X509Certificate cert) throws NoSuchAlgorithmException, CertificateEncodingException {
         MessageDigest md = MessageDigest.getInstance("SHA-1");
         md.update(cert.getEncoded());
         return DatatypeConverter.printHexBinary(md.digest()).toLowerCase();
     }
 
-    public static String getThumbprintSHA1(X509Certificate cert) throws
-            NoSuchAlgorithmException, CertificateEncodingException {
-        MessageDigest md = MessageDigest.getInstance("SHA-1");
-        md.update(cert.getEncoded());
-        return DatatypeConverter.printHexBinary(md.digest()).toLowerCase();
-    }
-
-    public static String getThumbprintMD5(X509Certificate cert) throws
-            NoSuchAlgorithmException, CertificateEncodingException {
+    public static String getThumbprintMD5(X509Certificate cert) throws NoSuchAlgorithmException, CertificateEncodingException {
         MessageDigest md = MessageDigest.getInstance("MD5");
         md.update(cert.getEncoded());
         return DatatypeConverter.printHexBinary(md.digest()).toLowerCase();
     }
 
-    public static String getThumbprintSHA256(X509Certificate cert) throws
-            NoSuchAlgorithmException, CertificateEncodingException {
+    public static String getThumbprintSHA256(X509Certificate cert) throws NoSuchAlgorithmException, CertificateEncodingException {
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         md.update(cert.getEncoded());
         return DatatypeConverter.printHexBinary(md.digest()).toLowerCase();

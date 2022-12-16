@@ -31,12 +31,18 @@ public class APIController {
 
     //全局保存所有的签名 hash ,dirPath
     public static Map<String, String> map = new HashMap<>();
-    public static List<RequestVersion> appList = new ArrayList();
+    public static List<DBAPPBean> appList = new ArrayList();
 
     @RequestMapping("/getSigns")
     public String getSigns() {
         return map.keySet().toString();
     }
+
+    @RequestMapping("/apks")
+    public String apks() {
+        return appList.toString();
+    }
+
 
     @PostMapping("/upload")
     public ResponseEntity<SuccessResponse> upload(@RequestParam("file") MultipartFile file, String packageName, long version, String sign) {
@@ -64,10 +70,7 @@ public class APIController {
     @RequestMapping("/getVersion")
     public ResponseEntity<ResponseVersion> getVersion(@Validated RequestVersion requestVersion) {
         System.out.println("收到请求:" + requestVersion);
-        RequestVersion returnVersion = updateApp(requestVersion);
-        String path = "http://www.baidu.com/a.apk";
-        ResponseVersion responseVersion = new ResponseVersion(new DBAPPBean(returnVersion.getPackageName(), returnVersion.getVersionCode(), returnVersion.getHash(), path));
-        return new ResponseEntity<>(responseVersion, HttpStatus.OK);
+        return new ResponseEntity<>(new ResponseVersion(updateApp(requestVersion)), HttpStatus.OK);
     }
 
     /**
@@ -80,13 +83,16 @@ public class APIController {
         return "";
     }
 
-    private RequestVersion updateApp(RequestVersion app) {
-        RequestVersion returnApp = new RequestVersion();
-        int idx = appList.indexOf(app);
+    private DBAPPBean updateApp(RequestVersion requestVersion) {
+        DBAPPBean searchApp = new DBAPPBean(requestVersion.getPackageName(), requestVersion.getVersionCode(), requestVersion.getHash(), "");
+        int idx = appList.indexOf(searchApp);
         if (idx > -1 && idx < appList.size()) {
-            returnApp = appList.get(idx);
-            if (app.getVersionCode() > returnApp.getVersionCode()) appList.set(idx, app);
-        } else appList.add(app);
-        return returnApp;
+            searchApp = appList.get(idx);
+            if (requestVersion.getVersionCode() > searchApp.getVersionCode()) appList.set(idx, searchApp);
+        } else {
+            appList.add(searchApp);
+            searchApp.versionCode = 0;
+        }
+        return searchApp;
     }
 }

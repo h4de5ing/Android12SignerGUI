@@ -1,6 +1,7 @@
 package org.example.api.utils;
 
 
+import org.example.api.enties.DBAPPBean;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.Namespace;
@@ -13,42 +14,29 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.cert.Certificate;
-import java.util.Iterator;
-import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public class APKUtils {
     private static final Namespace NS = Namespace.getNamespace("http://schemas.android.com/apk/res/android");
 
-    public static void main(String[] args) {
-        String path = "./baseAPk/base.apk";
+    public static DBAPPBean getOneApkInfo(String path) {
+        DBAPPBean dbappBean = null;
         SAXBuilder builder = new SAXBuilder();
         Document document;
         InputStream stream = null;
+        long versionCode = 0L;
+        String packageName = "";
+        String hash = "";
         try {
             stream = new ByteArrayInputStream(AXMLPrinter.getManifestXMLFromAPK(path).getBytes(StandardCharsets.UTF_8));
             document = builder.build(stream);
             Element root = document.getRootElement();
-            System.out.println(root.getAttributeValue("versionCode", NS));
-            System.out.println(root.getAttributeValue("versionName", NS));
+            versionCode = Long.parseLong(root.getAttributeValue("versionCode", NS));
             String s = root.getAttributes().toString();
             String c[] = s.split(",");
             for (String a : c) {
-                if (a.contains("package")) {
-                    System.out.println(a.substring(a.indexOf("package=\"") + 9, a.lastIndexOf("\"")));
-                }
-            }
-
-            List booklist = root.getChildren("uses-sdk");
-            Element book = (Element) booklist.get(0);
-            System.out.println("minSdkVersion:" + book.getAttributeValue("minSdkVersion", NS));
-            System.out.println("targetSdkVersion" + book.getAttributeValue("targetSdkVersion", NS));
-
-            booklist = root.getChildren("uses-permission");
-            for (Iterator iter = booklist.iterator(); iter.hasNext(); ) {
-                Element tempBook = (Element) iter.next();
-                System.out.println("permissions:" + tempBook.getAttributeValue("name", NS));
+                if (a.contains("package")) packageName = a.substring(a.indexOf("package=\"") + 9, a.lastIndexOf("\""));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -61,10 +49,19 @@ public class APKUtils {
                 }
             }
         }
+        try {
+            hash = getApkSignatureMD5(path);
+        } catch (Exception ignored) {
+        }
+        if (!isEmpty(packageName) && !isEmpty(hash) && !isEmpty(packageName)) {
+            dbappBean = new DBAPPBean(packageName, versionCode, hash, path);
+            System.out.println("找到一个apk " + dbappBean);
+        }
+        return dbappBean;
     }
 
-    public static void getAllAPKInfo() {
-
+    public static boolean isEmpty(CharSequence str) {
+        return str == null || str.length() == 0;
     }
 
     /**

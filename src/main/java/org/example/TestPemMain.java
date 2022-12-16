@@ -18,7 +18,7 @@ public class TestPemMain {
         for (File listFile : PemUtils.pemList) {
 //            System.out.println(listFile.getParent());
             X509Certificate certObject = PemUtils.getCertObject(listFile.getAbsolutePath());
-            String print = PemUtils.getThumbprint(certObject);
+            String print = PemUtils.getThumbprintMD5(certObject);
             System.out.println(listFile.getParent() + " [" + print + "]");
             map.put(print, listFile.getParent());
         }
