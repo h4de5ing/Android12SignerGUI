@@ -18,27 +18,49 @@ import java.util.jar.JarFile;
 
 public class PemUtils {
     public static void run() {
-        File file = new File("SignFiles");
-        PemUtils.pemList.clear();
-        PemUtils.getAllPem(file);
-        for (File listFile : PemUtils.pemList) {
+//        File file = new File("SignFiles");
+//        pemList.clear();
+//        getAllPem(file);
+//        for (File listFile : pemList) {
+//            try {
+//                X509Certificate certObject = getCertObject(listFile.getAbsolutePath());
+//                String print = getThumbprint(certObject);
+//                System.out.println(listFile.getParent() + " [" + print + "]");
+//                APIController.map.put(print, listFile.getParent());
+//            } catch (Exception e) {
+//                //System.err.println("发生异常:" + listFile.getAbsolutePath());
+//                //e.printStackTrace();
+//            }
+//        }
+        File apkFile = new File("baseApk");
+        apkList.clear();
+        getAllAPK(apkFile);
+        for (File listFile : apkList) {
             try {
-                X509Certificate certObject = PemUtils.getCertObject(listFile.getAbsolutePath());
-                String print = PemUtils.getThumbprint(certObject);
-                System.out.println(listFile.getParent() + " [" + print + "]");
-                APIController.map.put(print, listFile.getParent());
+                System.out.println(listFile.getAbsoluteFile());
+                String md5 = APKUtils.getApkSignatureMD5(listFile.getAbsolutePath());
+                System.out.println(md5);
             } catch (Exception e) {
-                e.printStackTrace();
+                //System.err.println("发生异常:" + listFile.getAbsolutePath());
+                //e.printStackTrace();
             }
         }
     }
 
     public static Set<File> pemList = new HashSet<>();
+    public static Set<File> apkList = new HashSet<>();
 
     public static void getAllPem(File file) {
         for (File listFile : Objects.requireNonNull(file.listFiles())) {
             if (listFile.isDirectory()) getAllPem(listFile);
             else if (listFile.getName().contains(".pem")) pemList.add(listFile.getAbsoluteFile());
+        }
+    }
+
+    public static void getAllAPK(File file) {
+        for (File listFile : Objects.requireNonNull(file.listFiles())) {
+            if (listFile.isDirectory()) getAllAPK(listFile);
+            else if (listFile.getName().contains(".apk")) apkList.add(listFile.getAbsoluteFile());
         }
     }
 

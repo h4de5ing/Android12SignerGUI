@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
+import java.util.Objects;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)//解决参数为null不返回前端
 public class RequestVersion implements Serializable {
@@ -45,5 +46,25 @@ public class RequestVersion implements Serializable {
                 ", versionCode=" + versionCode +
                 ", hash='" + hash + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        RequestVersion that = (RequestVersion) o;
+
+        if (versionCode != that.versionCode) return false;
+        if (!Objects.equals(packageName, that.packageName)) return false;
+        return Objects.equals(hash, that.hash);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = packageName != null ? packageName.hashCode() : 0;
+        result = 31 * result + (int) (versionCode ^ (versionCode >>> 32));
+        result = 31 * result + (hash != null ? hash.hashCode() : 0);
+        return result;
     }
 }

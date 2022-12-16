@@ -17,7 +17,7 @@ import java.io.*;
 import java.net.URL;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.util.Date;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
@@ -222,7 +222,7 @@ public class Controller implements Initializable {
         if (fileAPK != null) start.setDisable(!fileAPK.exists());
         else start.setDisable(true);
         platforms.setVisible(multi.isSelected());
-        if (System.currentTimeMillis() >= getExpire("20240101")) {
+        if (System.currentTimeMillis() >= getExpire("20230601")) {
             start.setDisable(true);
             updateLog("授权过期，请联系开发者重新获取授权：moxi1992@gmail.com");
         }
@@ -230,12 +230,11 @@ public class Controller implements Initializable {
 
     private long getExpire(String date) {
         try {
-            Calendar cal = Calendar.getInstance();
-            cal.setTime(new SimpleDateFormat("yyyyMMdd").parse(date));
-            return cal.getTimeInMillis();
+            Date date2 = new SimpleDateFormat("yyyyMMdd").parse(date);
+            return date2.getTime();
         } catch (Exception ignored) {
+            return 0;
         }
-        return getExpire("20240601");
     }
 
     private final TreeMap<String, String> allFileList = new TreeMap<>();
