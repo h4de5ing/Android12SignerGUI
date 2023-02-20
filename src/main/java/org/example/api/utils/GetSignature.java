@@ -16,11 +16,9 @@ public class GetSignature {
     public static String getApkSignInfo(String apkFilePath, boolean showException) {
         byte[] readBuffer = new byte[8192];
         Certificate[] certs = null;
-
         try {
             JarFile e = new JarFile(apkFilePath);
             Enumeration entries = e.entries();
-
             while (entries.hasMoreElements()) {
                 JarEntry je = (JarEntry) entries.nextElement();
                 if (!je.isDirectory() && !je.getName().startsWith("META-INF/")) {
@@ -29,33 +27,29 @@ public class GetSignature {
                     if (certs == null) {
                         certs = localCerts;
                     } else {
-                        for (int i = 0; i < certs.length; ++i) {
-                            for (int j = 0; j < localCerts.length; ++j) {
-                                if (certs[i] != null && certs[i].equals(localCerts[j])) {
+                        for (Certificate cert : certs) {
+                            assert localCerts != null;
+                            for (Certificate localCert : localCerts) {
+                                if (cert != null && cert.equals(localCert)) {
                                     found = true;
                                     break;
                                 }
                             }
-
                             if (certs.length != localCerts.length) {
                                 e.close();
                                 return null;
                             }
                         }
                     }
-
-                    if (found) {
-                        break;
-                    }
+                    if (found) break;
                 }
             }
 
             e.close();
+            assert certs != null;
             return getSignValidString(certs[0].getEncoded());
         } catch (Exception var10) {
-            if (showException) {
-                var10.printStackTrace();
-            }
+            if (showException) var10.printStackTrace();
             return "get signInfo failed, please use --debug get more info";
         }
     }
@@ -80,22 +74,17 @@ public class GetSignature {
         } else {
             int expectedStringLen = keyData.length * 2;
             StringBuilder sb = new StringBuilder(expectedStringLen);
-
-            for (int i = 0; i < keyData.length; ++i) {
-                String hexStr = Integer.toString(keyData[i] & 255, 16);
-                if (hexStr.length() == 1) {
-                    hexStr = "0" + hexStr;
-                }
-
+            for (byte keyDatum : keyData) {
+                String hexStr = Integer.toString(keyDatum & 255, 16);
+                if (hexStr.length() == 1) hexStr = "0" + hexStr;
                 sb.append(hexStr);
             }
-
             return sb.toString();
         }
     }
 
     private static String getSignValidString(byte[] sign) throws NoSuchAlgorithmException {
-        MessageDigest alga = null;
+        MessageDigest alga;
         alga = MessageDigest.getInstance("MD5");
         alga.update(sign);
         return toHexString(alga.digest());

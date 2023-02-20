@@ -8,6 +8,7 @@
 - 增加pk8和pem转换成jks
 
 ## TODO 　
+
 - [ ] 增加备用节点服务
 - [ ] 增加服务器端运行，支持接口自动签名升级app
 - [ ] apk新版本接口，如果服务器端没有apk，需要待添加
@@ -21,3 +22,5 @@
 
 ![新版本](screenshots/img.png)
 ![截图](screenshots/screenshots.png)
+
+[APK解析库](https://github.com/linchaolong/ApkToolPlus)

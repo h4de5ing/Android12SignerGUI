@@ -11,7 +11,11 @@ import javafx.scene.layout.FlowPane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import net.dongliu.apk.parser.ApkParser;
+import net.dongliu.apk.parser.bean.ApkMeta;
 import org.example.api.utils.PemUtils;
+import org.example.gui.bean.ListData;
+import org.example.gui.bean.OTABean;
 
 import java.io.*;
 import java.net.URL;
@@ -75,6 +79,8 @@ public class Controller implements Initializable {
         cbIdsig.selectedProperty().addListener((observableValue, oldValue, newValue) -> idsig = newValue);
         sign_file.textProperty().addListener((observableValue, s, newValue) -> updateStartStatus());
         apk_path.textProperty().addListener((observableValue, s, newValue) -> updateStartStatus());
+        fileAPK = new File("D:\\test\\hardscan\\v5.01.25\\hardscan_v5.01.25_20230217163510_normal-release-unsigned.apk");
+        apk_path.setText("D:\\test\\hardscan\\v5.01.25\\hardscan_v5.01.25_20230217163510_normal-release-unsigned.apk");
         clear.setOnAction(event -> sign_file.setText(""));
         jks.setOnAction(event -> jks());
         hash.setOnAction(event -> hash());
@@ -222,8 +228,10 @@ public class Controller implements Initializable {
         if (fileAPK != null) start.setDisable(!fileAPK.exists());
         else start.setDisable(true);
         platforms.setVisible(multi.isSelected());
-        if (System.currentTimeMillis() >= getExpire("20230601")) {
+        if (System.currentTimeMillis() >= getExpire("20240601")) {
             start.setDisable(true);
+            open_sign_file.setDisable(true);
+            open_apk_path.setDisable(true);
             updateLog("授权过期，请联系开发者重新获取授权：moxi1992@gmail.com");
         }
     }
@@ -265,10 +273,7 @@ public class Controller implements Initializable {
         String fileDir = sign_file.getText();
         String apkFile = apk_path.getText();
         File outDir = new File("out");
-        if (!outDir.exists()) {
-            boolean result = outDir.mkdir();
-            System.out.println(outDir.getAbsolutePath() + (result ? " 创建成功" : "创建失败"));
-        }
+        initOut();
         if (new File(fileDir).exists()) {
             File filePk8 = new File(new File(fileDir).getAbsoluteFile() + File.separator + pk8);
             File filePem = new File(new File(fileDir).getAbsoluteFile() + File.separator + pem);
@@ -279,8 +284,19 @@ public class Controller implements Initializable {
                         //签名
                         String outPath = outDir.getAbsolutePath() + File.separator + outFileName + "_" + new File(fileDir).getName() + "_signed.apk";
                         runCommand(java + " -jar " + apksigner + " sign --key " + filePk8.getAbsolutePath() + " --cert " + filePem.getAbsolutePath() + " --out " + outPath + " " + apkFile);
-//                        System.out.println("签名文件：" + outPath);
+                        System.out.println("签名文件：" + outPath);
                         updateLog(new File(fileDir).getName() + " 签名成功\n" + outPath);
+                        try {
+                            ApkParser apkParser = new ApkParser(new File(apkFile));
+                            ApkMeta apkMeta = apkParser.getApkMeta();
+                            String packName = apkMeta.getPackageName();
+                            long versionCode = apkMeta.getVersionCode();
+                            OTABean otaBean = new OTABean(packName, versionCode);
+                            otaBean.add(new ListData("", PemUtils.getThumbprintMD5(PemUtils.getCertObject(filePem.getAbsolutePath())), ""));
+                            System.out.println(otaBean);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                         deleteFile(outDir);
                     } else updateLog(fileAPK + " 请选择一个APK");
                 } else updateLog(filePem + " 文件不存在");
@@ -289,34 +305,47 @@ public class Controller implements Initializable {
     }
 
     private void multiSign() {
-        String apkFile = apk_path.getText();
-        fileAPK = new File(apkFile);
-        File outDir = new File("out");
-        if (!outDir.exists()) {
-            boolean result = outDir.mkdir();
-            System.out.println(outDir.getAbsolutePath() + (result ? " 创建成功" : "创建失败"));
-        }
-        if (fileAPK.exists()) {
-            ObservableList<Node> children = platforms.getChildren();
-            for (int i = 0; i < children.size(); i++) {
-                Node child = children.get(i);
-                CheckBox checkBox = (CheckBox) child;
-                if (checkBox.isSelected()) {//如果选中就操作
-                    String fileDir = allFileList.get(checkBox.getText());
-                    File filePk8 = new File(new File(fileDir).getAbsoluteFile() + File.separator + pk8);
-                    File filePem = new File(new File(fileDir).getAbsoluteFile() + File.separator + pem);
-                    if (filePk8.exists()) {
+        try {
+            String apkFile = apk_path.getText();
+            fileAPK = new File(apkFile);
+            File outDir = new File("out");
+            initOut();
+            if (fileAPK.exists()) {
+                ObservableList<Node> children = platforms.getChildren();
+                ApkParser apkParser = new ApkParser(new File(apkFile));
+                ApkMeta apkMeta = apkParser.getApkMeta();
+                String packName = apkMeta.getPackageName();
+                long versionCode = apkMeta.getVersionCode();
+                OTABean otaBean = new OTABean(packName, versionCode);
+                for (int i = 0; i < children.size(); i++) {
+                    Node child = children.get(i);
+                    CheckBox checkBox = (CheckBox) child;
+                    if (checkBox.isSelected()) {//如果选中就操作
+                        String fileDir = allFileList.get(checkBox.getText());
+                        File filePk8 = new File(new File(fileDir).getAbsoluteFile() + File.separator + pk8);
+                        File filePem = new File(new File(fileDir).getAbsoluteFile() + File.separator + pem);
                         if (filePem.exists()) {
-                            String outPath = outDir.getAbsolutePath() + File.separator + outFileName + "_" + checkBox.getText() + "_signed.apk";
-                            //签名
-                            runCommand(java + " -jar " + apksigner + " sign --key " + filePk8.getAbsolutePath() + " --cert " + filePem.getAbsolutePath() + " --out " + outPath + " " + fileAPK);
-                            updateLog(checkBox.getText() + " 签名成功\n" + outPath);
-                            if (i == (children.size() - 1)) deleteFile(outDir);
+                            if (filePk8.exists()) {
+                                //准备生成
+                                try {
+                                    otaBean.add(new ListData("", PemUtils.getThumbprintMD5(PemUtils.getCertObject(filePem.getAbsolutePath())), ""));
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                                String outPath = outDir.getAbsolutePath() + File.separator + outFileName + "_" + checkBox.getText() + "_signed.apk";
+                                //签名
+                                runCommand(java + " -jar " + apksigner + " sign --key " + filePk8.getAbsolutePath() + " --cert " + filePem.getAbsolutePath() + " --out " + outPath + " " + fileAPK);
+                                updateLog(checkBox.getText() + " 签名成功\n" + outPath);
+                                if (i == (children.size() - 1)) deleteFile(outDir);
+                            } else updateLog(filePk8 + " 文件不存在");
                         } else updateLog(filePem + " 文件不存在");
-                    } else updateLog(filePk8 + " 文件不存在");
+                    }
                 }
-            }
-        } else updateLog(fileAPK + " 请选择一个APK");
+                System.out.println(otaBean);
+            } else updateLog(fileAPK + " 请选择一个APK");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void deleteFile(File outDir) {
@@ -400,6 +429,14 @@ public class Controller implements Initializable {
         File fileAPK = new File(apkFile);
         if (fileAPK.exists()) {
             runCommand(keytool + " -printcert -jarfile " + apkFile);
+        }
+    }
+
+    private void initOut() {
+        File outDir = new File("out");
+        if (!outDir.exists()) {
+            boolean result = outDir.mkdir();
+            System.out.println(outDir.getAbsolutePath() + (result ? " 创建成功" : "创建失败"));
         }
     }
 }

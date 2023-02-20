@@ -39,4 +39,12 @@ public class DBAPPBean {
         result = 31 * result + (hash != null ? hash.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "DBAPPBean{" +
+                "packageName='" + packageName + '\'' +
+                ", versionCode=" + versionCode +
+                '}';
+    }
 }

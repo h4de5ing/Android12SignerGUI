@@ -13,7 +13,7 @@ public class AXMLPrinter {
 
 
     public static String getManifestXMLFromAPK(String apkPath) {
-        ZipFile file = null;
+        ZipFile file;
         StringBuilder xmlSb = new StringBuilder(100);
         try {
             File apkFile = new File(apkPath);

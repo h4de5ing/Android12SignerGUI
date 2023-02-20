@@ -14,11 +14,13 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.cert.Certificate;
+import java.util.Objects;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public class APKUtils {
     private static final Namespace NS = Namespace.getNamespace("http://schemas.android.com/apk/res/android");
+    public static String packageNameStatic = "";
 
     public static DBAPPBean getOneApkInfo(String path) {
         DBAPPBean dbappBean = null;
@@ -36,7 +38,11 @@ public class APKUtils {
             String s = root.getAttributes().toString();
             String c[] = s.split(",");
             for (String a : c) {
-                if (a.contains("package")) packageName = a.substring(a.indexOf("package=\"") + 9, a.lastIndexOf("\""));
+                System.out.println("找到了TAG:" + a);
+                if (a.contains("package")) {
+                    packageName = a.substring(a.indexOf("package=\"") + 9, a.lastIndexOf("\""));
+                    packageNameStatic = packageName;
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -147,5 +153,18 @@ public class APKUtils {
             e.printStackTrace();
             return "";
         }
+    }
+
+    public static String getClassFieldValue(String fieldName) {
+        String value = "";
+        try {
+            if (!Objects.equals(packageNameStatic, "")) {
+                Class clazzName = Class.forName(packageNameStatic + ".BuildConfig");
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return value;
     }
 }
