@@ -61,7 +61,7 @@ public class Controller implements Initializable {
     String keytool = "";
     File dirSign;//sign 文件夹
     File fileAPK;//待签名的apk文件
-    String outFileName = "out";
+    String outDirName = "out";
     boolean idsig = true;//是否删除
     boolean isWindow = true;
 
@@ -76,8 +76,6 @@ public class Controller implements Initializable {
         cbIdsig.selectedProperty().addListener((observableValue, oldValue, newValue) -> idsig = newValue);
         sign_file.textProperty().addListener((observableValue, s, newValue) -> updateStartStatus());
         apk_path.textProperty().addListener((observableValue, s, newValue) -> updateStartStatus());
-        fileAPK = new File("D:\\test\\hardscan\\v5.01.25\\hardscan_v5.01.25_20230217163510_normal-release-unsigned.apk");
-        apk_path.setText("D:\\test\\hardscan\\v5.01.25\\hardscan_v5.01.25_20230217163510_normal-release-unsigned.apk");
         clear.setOnAction(event -> sign_file.setText(""));
         jks.setOnAction(event -> jks());
         hash.setOnAction(event -> hash());
@@ -108,7 +106,7 @@ public class Controller implements Initializable {
                 check_apk.setDisable(false);
                 apk_path.setText(file.getAbsolutePath());
                 try {
-                    outFileName = file.getName().split("\\.apk")[0];
+                    outDirName = file.getName().split("\\.apk")[0];
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -279,7 +277,8 @@ public class Controller implements Initializable {
                     fileAPK = new File(apkFile);
                     if (fileAPK.exists()) {
                         //签名
-                        String outPath = outDir.getAbsolutePath() + File.separator + outFileName + "_" + new File(fileDir).getName() + "_signed.apk";
+                        String outFileName = outDirName + "_" + new File(fileDir).getName() + "_signed.apk";
+                        String outPath = outDir.getAbsolutePath() + File.separator + outFileName;
                         runCommand(java + " -jar " + apksigner + " sign --key " + filePk8.getAbsolutePath() + " --cert " + filePem.getAbsolutePath() + " --out " + outPath + " " + apkFile);
                         System.out.println("签名文件：" + outPath);
                         updateLog(new File(fileDir).getName() + " 签名成功\n" + outPath);
@@ -287,9 +286,10 @@ public class Controller implements Initializable {
                             ApkParser apkParser = new ApkParser(new File(apkFile));
                             ApkMeta apkMeta = apkParser.getApkMeta();
                             String packName = apkMeta.getPackageName();
+                            String versionName = apkMeta.getVersionName();
                             long versionCode = apkMeta.getVersionCode();
                             List<TagBean> list = new ArrayList<>();
-                            list.add(new TagBean("", "", PemUtils.getThumbprintMD5(PemUtils.getCertObject(filePem.getAbsolutePath()))));
+                            list.add(new TagBean("", "v" + versionName + "/" + outFileName, PemUtils.getThumbprintMD5(PemUtils.getCertObject(filePem.getAbsolutePath()))));
                             ConfigBean bean = new ConfigBean(packName, versionCode, list);
                             System.out.println(bean);
                         } catch (Exception e) {
@@ -313,6 +313,7 @@ public class Controller implements Initializable {
                 ApkParser apkParser = new ApkParser(new File(apkFile));
                 ApkMeta apkMeta = apkParser.getApkMeta();
                 String packName = apkMeta.getPackageName();
+                String versionName = apkMeta.getVersionName();
                 long versionCode = apkMeta.getVersionCode();
                 List<TagBean> list = new ArrayList<>();
                 for (int i = 0; i < children.size(); i++) {
@@ -324,16 +325,16 @@ public class Controller implements Initializable {
                         File filePem = new File(new File(fileDir).getAbsoluteFile() + File.separator + pem);
                         if (filePem.exists()) {
                             if (filePk8.exists()) {
-                                //准备生成
-                                try {
-                                    list.add(new TagBean("", "", PemUtils.getThumbprintMD5(PemUtils.getCertObject(filePem.getAbsolutePath()))));
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                                String outPath = outDir.getAbsolutePath() + File.separator + outFileName + "_" + checkBox.getText() + "_signed.apk";
+                                String outFileName = outDirName + "_" + checkBox.getText() + "_signed.apk";
+                                String outPath = outDir.getAbsolutePath() + File.separator + outFileName;
                                 //签名
                                 runCommand(java + " -jar " + apksigner + " sign --key " + filePk8.getAbsolutePath() + " --cert " + filePem.getAbsolutePath() + " --out " + outPath + " " + fileAPK);
                                 updateLog(checkBox.getText() + " 签名成功\n" + outPath);
+                                try {
+                                    list.add(new TagBean("", "v" + versionName + "/" + outFileName, PemUtils.getThumbprintMD5(PemUtils.getCertObject(filePem.getAbsolutePath()))));
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
                                 if (i == (children.size() - 1)) deleteFile(outDir);
                             } else updateLog(filePk8 + " 文件不存在");
                         } else updateLog(filePem + " 文件不存在");
