@@ -14,17 +14,14 @@ import javafx.stage.Stage;
 import net.dongliu.apk.parser.ApkParser;
 import net.dongliu.apk.parser.bean.ApkMeta;
 import org.example.api.utils.PemUtils;
-import org.example.gui.bean.ListData;
-import org.example.gui.bean.OTABean;
+import org.example.config.ConfigBean;
+import org.example.config.TagBean;
 
 import java.io.*;
 import java.net.URL;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Objects;
-import java.util.ResourceBundle;
-import java.util.TreeMap;
+import java.util.*;
 
 public class Controller implements Initializable {
     @FXML
@@ -291,9 +288,10 @@ public class Controller implements Initializable {
                             ApkMeta apkMeta = apkParser.getApkMeta();
                             String packName = apkMeta.getPackageName();
                             long versionCode = apkMeta.getVersionCode();
-                            OTABean otaBean = new OTABean(packName, versionCode);
-                            otaBean.add(new ListData("", PemUtils.getThumbprintMD5(PemUtils.getCertObject(filePem.getAbsolutePath())), ""));
-                            System.out.println(otaBean);
+                            List<TagBean> list = new ArrayList<>();
+                            list.add(new TagBean("", "", PemUtils.getThumbprintMD5(PemUtils.getCertObject(filePem.getAbsolutePath()))));
+                            ConfigBean bean = new ConfigBean(packName, versionCode, list);
+                            System.out.println(bean);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -316,7 +314,7 @@ public class Controller implements Initializable {
                 ApkMeta apkMeta = apkParser.getApkMeta();
                 String packName = apkMeta.getPackageName();
                 long versionCode = apkMeta.getVersionCode();
-                OTABean otaBean = new OTABean(packName, versionCode);
+                List<TagBean> list = new ArrayList<>();
                 for (int i = 0; i < children.size(); i++) {
                     Node child = children.get(i);
                     CheckBox checkBox = (CheckBox) child;
@@ -328,7 +326,7 @@ public class Controller implements Initializable {
                             if (filePk8.exists()) {
                                 //准备生成
                                 try {
-                                    otaBean.add(new ListData("", PemUtils.getThumbprintMD5(PemUtils.getCertObject(filePem.getAbsolutePath())), ""));
+                                    list.add(new TagBean("", "", PemUtils.getThumbprintMD5(PemUtils.getCertObject(filePem.getAbsolutePath()))));
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
@@ -341,7 +339,8 @@ public class Controller implements Initializable {
                         } else updateLog(filePem + " 文件不存在");
                     }
                 }
-                System.out.println(otaBean);
+                ConfigBean bean = new ConfigBean(packName, versionCode, list);
+                System.out.println(bean);
             } else updateLog(fileAPK + " 请选择一个APK");
         } catch (Exception e) {
             e.printStackTrace();

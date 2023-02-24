@@ -1,7 +1,6 @@
 package org.example.api.utils;
 
 import org.example.api.APIController;
-import org.example.api.enties.DBAPPBean;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.File;
@@ -36,15 +35,6 @@ public class PemUtils {
         File apkFile = new File("baseApk");
         apkList.clear();
         getAllAPK(apkFile);
-        for (File listFile : apkList) {
-            try {
-                DBAPPBean bean = APKUtils.getOneApkInfo(listFile.getAbsolutePath());
-                if (bean != null) APIController.appList.add(bean);
-            } catch (Exception e) {
-                //System.err.println("发生异常:" + listFile.getAbsolutePath());
-                //e.printStackTrace();
-            }
-        }
     }
 
     public static Set<File> pemList = new HashSet<>();
