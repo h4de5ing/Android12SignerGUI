@@ -15,8 +15,7 @@ public class GetConfig {
                 File file = new File(System.getProperty("user.dir") + File.separator + fileName);
                 if (file.exists()) properties.load(new FileInputStream(file));
                 else properties.load(GetConfig.class.getClassLoader().getResourceAsStream(fileName));
-            } catch (Exception e) {
-                //e.printStackTrace();
+            } catch (Exception ignored) {
             }
         }
         return pp;

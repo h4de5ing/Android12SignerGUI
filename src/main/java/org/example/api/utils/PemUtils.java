@@ -1,12 +1,16 @@
 package org.example.api.utils;
 
+import com.android.apksig.ApkVerifier;
+import com.android.apksig.apk.ApkFormatException;
+import com.android.apksig.apk.ApkUtils;
+import com.android.apksig.internal.apk.AndroidBinXmlParser;
+import com.android.apksig.util.DataSource;
+import com.android.apksig.util.DataSources;
 import org.example.api.APIController;
 
 import javax.xml.bind.DatatypeConverter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.*;
@@ -120,7 +124,7 @@ public class PemUtils {
     }
 
     /**
-     * 加载签名
+     * 加载签名,无法加载v2签名
      *
      * @param jarFile    jar文件
      * @param je         jar实体
@@ -156,5 +160,89 @@ public class PemUtils {
             e.printStackTrace();
             return "";
         }
+    }
+
+    public static String getApkSignerMD5(String apkPath) {
+        String md5 = "";
+        try {
+            ApkVerifier.Builder apkVerifierBuilder = new ApkVerifier.Builder(new File(apkPath));
+            ApkVerifier apkVerifier = apkVerifierBuilder.build();
+            ApkVerifier.Result result = apkVerifier.verify();
+            if (result.isVerified()) {
+                if (result.isVerifiedUsingV1Scheme()) System.out.println("v1 scheme");
+                if (result.isVerifiedUsingV2Scheme()) System.out.println("v2 scheme");
+                if (result.isVerifiedUsingV3Scheme()) System.out.println("v3 scheme");
+                if (result.isVerifiedUsingV31Scheme()) System.out.println("v3.1 scheme");
+                if (result.isVerifiedUsingV4Scheme()) System.out.println("v4 scheme");
+                md5 = getThumbprintMD5(result.getSignerCertificates().get(0));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return md5;
+    }
+
+    public static void getAPkInfo(String apkPath) {
+        try {
+            DataSource inputApk = DataSources.asDataSource(new RandomAccessFile(apkPath, "r"));
+            ByteBuffer buffer = ApkUtils.getAndroidManifest(inputApk);
+            getPackageNameFromBinaryAndroidManifest(buffer);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static String versionCode = "";
+    private static String versionName = "";
+    private static String sharedUserId = "";
+    private static String packageName = "";
+
+    public static void getPackageNameFromBinaryAndroidManifest(ByteBuffer androidManifestContents) {
+        try {
+            try {
+                AndroidBinXmlParser parser = new AndroidBinXmlParser(androidManifestContents);
+                int eventType = parser.getEventType();
+                while (eventType != AndroidBinXmlParser.EVENT_END_DOCUMENT) {
+                    if ((eventType == AndroidBinXmlParser.EVENT_START_ELEMENT)
+                            && (parser.getDepth() == 1)
+                            && ("manifest".equals(parser.getName()))
+                            && (parser.getNamespace().isEmpty())) {
+                        for (int i = 0; i < parser.getAttributeCount(); i++) {
+                            String attributeName = parser.getAttributeName(i);
+                            String attributeStringValue = parser.getAttributeStringValue(i);
+                            if ("versionCode".equals(parser.getAttributeName(i)))
+                                versionCode = parser.getAttributeStringValue(i);
+                            if ("versionName".equals(parser.getAttributeName(i)))
+                                versionName = parser.getAttributeStringValue(i);
+                            if ("sharedUserId".equals(parser.getAttributeName(i)))
+                                sharedUserId = parser.getAttributeStringValue(i);
+                            if ("package".equals(parser.getAttributeName(i))) packageName = attributeStringValue;
+//                            System.out.println(attributeName + " = " + attributeStringValue);
+                        }
+                    }
+                    eventType = parser.next();
+                }
+            } catch (AndroidBinXmlParser.XmlParserException e) {
+                throw new ApkFormatException("Unable to determine APK package name: malformed binary resource: AndroidManifest.xml", e);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static String getPackageName() {
+        return packageName;
+    }
+
+    public static String getVersionName() {
+        return versionName;
+    }
+
+    public static long getVersionCode() {
+        return !Objects.equals(versionCode, "") ? Long.parseLong(versionCode) : 0L;
+    }
+
+    public static String getSharedUserId() {
+        return sharedUserId;
     }
 }
