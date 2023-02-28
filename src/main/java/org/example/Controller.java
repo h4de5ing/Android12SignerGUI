@@ -60,7 +60,7 @@ public class Controller implements Initializable {
     File dirSign;//sign 文件夹
     File fileAPK;//待签名的apk文件
     String outDirName = "out";
-    boolean idsig = true;//是否删除
+    boolean idsig = true;//是否删除 .idsig文件
     boolean isWindow = true;
 
     @Override
@@ -138,42 +138,10 @@ public class Controller implements Initializable {
         System.out.println(keytool);
     }
 
-    //查找执行文件
-    private String fileExeFilePath(String exe) {
-        String result = "";
-        try {
-            //在class path路径里面找
-            String[] split = System.getProperty("java.class.path").split(";");
-            for (String s : split) {
-//                System.out.println(s);
-                if (new File(s + File.separator + exe).exists()) {
-                    result = s + File.separator + exe;
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
-
     private String findJavaPath() {
         String result = "";
-        //在系统环境变量里面找
-//        Iterator it = System.getenv().entrySet().iterator();
-//        while (it.hasNext()) {
-//            Map.Entry entry = (Map.Entry) it.next();
-////            System.out.println(entry.getKey() + "=" + entry.getValue());
-//            for (String s : entry.getValue().toString().split(";")) {
-//                File javaPath = new File(s + File.separator + (isWindow ? "java.exe" : "java"));
-//                if (javaPath.exists() && javaPath.getAbsolutePath().contains("bin")) {
-//                    result = javaPath.getAbsolutePath();
-//                }
-//            }
-//        }
-        //在Path里面找
         String path = System.getenv("PATH");
         for (String s : path.split(";")) {
-//            System.out.println(s);
             File javaPath = new File(s + File.separator + (isWindow ? "java.exe" : "java"));
             if (javaPath.exists() && javaPath.getAbsolutePath().contains("bin")) {
                 result = javaPath.getAbsolutePath();
@@ -215,7 +183,7 @@ public class Controller implements Initializable {
         if (fileAPK != null) start.setDisable(!fileAPK.exists());
         else start.setDisable(true);
         platforms.setVisible(multi.isSelected());
-        if (System.currentTimeMillis() >= getExpire("20240601")) {
+        if (System.currentTimeMillis() >= getExpire("20250601")) {
             start.setDisable(true);
             open_sign_file.setDisable(true);
             open_apk_path.setDisable(true);
@@ -237,7 +205,6 @@ public class Controller implements Initializable {
     private void initSignDir() {
         File file = new File("SignFiles");
         File[] files = file.listFiles();
-        //更新多平台选项
         platforms.setPadding(new Insets(5, 5, 5, 0));
         if (files != null) {
             for (File f : files) {
@@ -268,7 +235,6 @@ public class Controller implements Initializable {
                 if (filePem.exists()) {
                     fileAPK = new File(apkFile);
                     if (fileAPK.exists()) {
-                        //签名
                         String outFileName = outDirName + "_" + new File(fileDir).getName() + "_signed.apk";
                         String outPath = outDir.getAbsolutePath() + File.separator + outFileName;
                         SignUtils.sign(fileAPK, outPath, filePk8.getAbsolutePath(), filePem.getAbsolutePath());
@@ -309,7 +275,7 @@ public class Controller implements Initializable {
                 for (int i = 0; i < children.size(); i++) {
                     Node child = children.get(i);
                     CheckBox checkBox = (CheckBox) child;
-                    if (checkBox.isSelected()) {//如果选中就操作
+                    if (checkBox.isSelected()) {
                         String fileDir = allFileList.get(checkBox.getText());
                         File filePk8 = new File(new File(fileDir).getAbsoluteFile() + File.separator + pk8);
                         File filePem = new File(new File(fileDir).getAbsoluteFile() + File.separator + pem);
@@ -317,7 +283,6 @@ public class Controller implements Initializable {
                             if (filePk8.exists()) {
                                 String outFileName = outDirName + "_" + checkBox.getText() + "_signed.apk";
                                 String outPath = outDir.getAbsolutePath() + File.separator + outFileName;
-                                //签名
                                 SignUtils.sign(fileAPK, outPath, filePk8.getAbsolutePath(), filePem.getAbsolutePath());
                                 updateLog(checkBox.getText() + " 签名成功\n" + outPath);
                                 try {
@@ -340,10 +305,13 @@ public class Controller implements Initializable {
 
     private void deleteFile(File outDir) {
         if (idsig) {
-            for (File file : Objects.requireNonNull(outDir.listFiles())) {
-                if (file.getAbsolutePath().endsWith(".idsig")) {
-                    boolean deleteResult = file.delete();
-                    System.out.println(file.getName() + (deleteResult ? " 删除成功" : " 删除失败"));
+            File[] files = outDir.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.getAbsolutePath().endsWith(".idsig")) {
+                        boolean deleteResult = file.delete();
+                        System.out.println(file.getName() + (deleteResult ? " 删除成功" : " 删除失败"));
+                    }
                 }
             }
         }
@@ -380,7 +348,6 @@ public class Controller implements Initializable {
             } else {
                 File filePk8 = new File(new File(fileDir).getAbsoluteFile() + File.separator + pk8);
                 File filePem = new File(new File(fileDir).getAbsoluteFile() + File.separator + pem);
-
                 File platformPem = new File(new File(fileDir).getAbsoluteFile() + File.separator + "platform.pem");
                 runCommand(openssl + " pkcs8 -inform DER -nocrypt -in " + filePk8.getAbsolutePath() + " -out " + platformPem.getAbsolutePath());
                 File platformP12 = new File(new File(fileDir).getAbsoluteFile() + File.separator + "platform.p12");
