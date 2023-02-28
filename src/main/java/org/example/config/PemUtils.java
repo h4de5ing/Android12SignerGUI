@@ -1,4 +1,4 @@
-package org.example.api.utils;
+package org.example.config;
 
 import com.android.apksig.ApkVerifier;
 import com.android.apksig.apk.ApkFormatException;
@@ -6,9 +6,8 @@ import com.android.apksig.apk.ApkUtils;
 import com.android.apksig.internal.apk.AndroidBinXmlParser;
 import com.android.apksig.util.DataSource;
 import com.android.apksig.util.DataSources;
-import org.example.api.APIController;
+import com.android.apksigner.HexEncoding;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
@@ -30,7 +29,6 @@ public class PemUtils {
                 X509Certificate certObject = getCertObject(listFile.getAbsolutePath());
                 String print = getThumbprintMD5(certObject);
                 System.out.println(listFile.getAbsolutePath() + " [" + print + "]");
-                APIController.map.put(print, listFile.getParent());
             } catch (Exception e) {
                 //System.err.println("发生异常:" + listFile.getAbsolutePath());
                 //e.printStackTrace();
@@ -68,19 +66,19 @@ public class PemUtils {
     public static String getThumbprintSHA1(X509Certificate cert) throws NoSuchAlgorithmException, CertificateEncodingException {
         MessageDigest md = MessageDigest.getInstance("SHA-1");
         md.update(cert.getEncoded());
-        return DatatypeConverter.printHexBinary(md.digest()).toLowerCase();
+        return HexEncoding.encode(md.digest()).toLowerCase();
     }
 
     public static String getThumbprintMD5(X509Certificate cert) throws NoSuchAlgorithmException, CertificateEncodingException {
         MessageDigest md = MessageDigest.getInstance("MD5");
         md.update(cert.getEncoded());
-        return DatatypeConverter.printHexBinary(md.digest()).toLowerCase();
+        return HexEncoding.encode(md.digest()).toLowerCase();
     }
 
     public static String getThumbprintSHA256(X509Certificate cert) throws NoSuchAlgorithmException, CertificateEncodingException {
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         md.update(cert.getEncoded());
-        return DatatypeConverter.printHexBinary(md.digest()).toLowerCase();
+        return HexEncoding.encode(md.digest()).toLowerCase();
     }
 
     /**
