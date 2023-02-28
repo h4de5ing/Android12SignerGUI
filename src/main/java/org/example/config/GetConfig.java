@@ -13,6 +13,8 @@ public class GetConfig {
             pp = new GetConfig();
             try {
                 File file = new File(System.getProperty("user.dir") + File.separator + fileName);
+                System.out.println("用户环境路径:" + file.getAbsolutePath());
+                System.out.println("程序执行路径:" + GetConfig.class.getClassLoader().getResource(fileName).getFile());
                 if (file.exists()) properties.load(new FileInputStream(file));
                 else properties.load(GetConfig.class.getClassLoader().getResourceAsStream(fileName));
             } catch (Exception ignored) {

@@ -1,6 +1,13 @@
 package org.example.config;
 
+import com.android.apksig.ApkSigner;
+import com.android.apksigner.ApkSignerTool;
+import com.android.apksigner.PasswordRetriever;
+import com.android.apksigner.SignerParams;
+
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class SignUtils {
@@ -15,7 +22,6 @@ public class SignUtils {
     }
 
     public static boolean isWindow = true;
-    public static String apksigner = "";
     public static String java = "";
     public static String openssl = "";
     public static String keytool = "";
@@ -29,15 +35,8 @@ public class SignUtils {
         if (checkPath(javaPath1)) java = javaPath1;
         else if (checkPath(javaPath)) java = javaPath;
         else System.err.println("java路径 没有找到...【" + javaPath1 + "】不存在");
-        String apksignerPath = new File("apksigner.jar").getAbsolutePath();
-//        System.out.println(apksignerPath);
-        String apksignerPath2 = fileExeFilePath("apksigner.jar");
-        if (checkPath(apksignerPath)) apksigner = apksignerPath;
-        else if (checkPath(apksignerPath2)) apksigner = apksignerPath2;
-        else System.err.println("签名工具apksigner.jar 没有找到...【" + apksignerPath + "】不存在");
         System.out.println("如果签名工具在使用中有什么问题请提供问题截图或者日志联系开发者:moxi1992@gmail.com");
         System.out.println("java:" + java);
-        System.out.println("apksigner:" + apksigner);
         System.out.println("openssl:" + openssl);
         System.out.println("keytools:" + keytool);
     }
@@ -140,6 +139,46 @@ public class SignUtils {
             reader.close();
         } catch (Exception e) {
             stringChange.updateLog(e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void sign(File inputApk, String tmpOutputApkPath, String pk8File, String pemFile) {
+        List<SignerParams> signers = new ArrayList<>(1);
+        SignerParams signerParams = new SignerParams();
+        signerParams.setKeyFile(pk8File);
+        signerParams.setCertFile(pemFile);
+        signers.add(signerParams);
+        List<ApkSigner.SignerConfig> signerConfigs = new ArrayList<>(signers.size());
+        try (PasswordRetriever passwordRetriever = new PasswordRetriever()) {
+            for (SignerParams signer : signers) {
+                ApkSigner.SignerConfig signerConfig = ApkSignerTool.getSignerConfig(signer, passwordRetriever, true);
+                signerConfigs.add(signerConfig);
+            }
+        }
+        try {
+            File tmpOutputApk = new File(tmpOutputApkPath);
+            ApkSigner.Builder apkSignerBuilder =
+                    new ApkSigner.Builder(signerConfigs)
+                            .setInputApk(inputApk)
+                            .setOutputApk(tmpOutputApk)
+                            .setOtherSignersSignaturesPreserved(false)
+                            .setV1SigningEnabled(true)
+                            .setV2SigningEnabled(true)
+                            .setV3SigningEnabled(true)
+                            .setV4SigningEnabled(true)
+                            .setForceSourceStampOverwrite(false)
+                            .setAlignFileSize(false)
+                            .setVerityEnabled(false)
+                            .setV4ErrorReportingEnabled(false)
+                            .setDebuggableApkPermitted(true)
+                            .setSigningCertificateLineage(null)
+                            .setMinSdkVersionForRotation(33)
+                            .setRotationTargetsDevRelease(false);
+            ApkSigner apkSigner = apkSignerBuilder.build();
+            apkSigner.sign();
+        } catch (Exception e) {
+            System.err.println("签名失败" + e.getMessage());
             e.printStackTrace();
         }
     }

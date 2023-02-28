@@ -11,10 +11,9 @@ import javafx.scene.layout.FlowPane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import net.dongliu.apk.parser.ApkParser;
-import net.dongliu.apk.parser.bean.ApkMeta;
 import org.example.api.utils.PemUtils;
 import org.example.config.ConfigBean;
+import org.example.config.SignUtils;
 import org.example.config.TagBean;
 
 import java.io.*;
@@ -55,7 +54,6 @@ public class Controller implements Initializable {
     String pk8 = "platform.pk8";
     String pem = "platform.x509.pem";
     //对齐命令的路径
-    String apksigner = "";
     String java = "";
     String openssl = "";
     String keytool = "";
@@ -134,14 +132,8 @@ public class Controller implements Initializable {
         if (checkPath(javaPath1)) java = javaPath1;
         else if (checkPath(javaPath)) java = javaPath;
         else System.err.println("java路径 没有找到...【" + javaPath1 + "】不存在");
-        String apksignerPath = new File("apksigner.jar").getAbsolutePath();
-        String apksignerPath2 = fileExeFilePath("apksigner.jar");
-        if (checkPath(apksignerPath)) apksigner = apksignerPath;
-        else if (checkPath(apksignerPath2)) apksigner = apksignerPath2;
-        else System.err.println("签名工具apksigner.jar 没有找到...【" + apksignerPath + "】不存在");
         System.out.println("如果签名工具在使用中有什么问题请提供问题截图或者日志联系开发者:moxi1992@gmail.com");
         System.out.println(java);
-        System.out.println(apksigner);
         System.out.println(openssl);
         System.out.println(keytool);
     }
@@ -279,15 +271,14 @@ public class Controller implements Initializable {
                         //签名
                         String outFileName = outDirName + "_" + new File(fileDir).getName() + "_signed.apk";
                         String outPath = outDir.getAbsolutePath() + File.separator + outFileName;
-                        runCommand(java + " -jar " + apksigner + " sign --key " + filePk8.getAbsolutePath() + " --cert " + filePem.getAbsolutePath() + " --out " + outPath + " " + apkFile);
+                        SignUtils.sign(fileAPK, outPath, filePk8.getAbsolutePath(), filePem.getAbsolutePath());
                         System.out.println("签名文件：" + outPath);
                         updateLog(new File(fileDir).getName() + " 签名成功\n" + outPath);
                         try {
-                            ApkParser apkParser = new ApkParser(new File(apkFile));
-                            ApkMeta apkMeta = apkParser.getApkMeta();
-                            String packName = apkMeta.getPackageName();
-                            String versionName = apkMeta.getVersionName();
-                            long versionCode = apkMeta.getVersionCode();
+                            PemUtils.getAPkInfo(apkFile);
+                            String packName = PemUtils.getPackageName();
+                            String versionName = PemUtils.getVersionName();
+                            long versionCode = PemUtils.getVersionCode();
                             List<TagBean> list = new ArrayList<>();
                             list.add(new TagBean("", "v" + versionName + "/" + outFileName, PemUtils.getThumbprintMD5(PemUtils.getCertObject(filePem.getAbsolutePath()))));
                             ConfigBean bean = new ConfigBean(packName, versionCode, list);
@@ -310,11 +301,10 @@ public class Controller implements Initializable {
             initOut();
             if (fileAPK.exists()) {
                 ObservableList<Node> children = platforms.getChildren();
-                ApkParser apkParser = new ApkParser(new File(apkFile));
-                ApkMeta apkMeta = apkParser.getApkMeta();
-                String packName = apkMeta.getPackageName();
-                String versionName = apkMeta.getVersionName();
-                long versionCode = apkMeta.getVersionCode();
+                PemUtils.getAPkInfo(apkFile);
+                String packName = PemUtils.getPackageName();
+                String versionName = PemUtils.getVersionName();
+                long versionCode = PemUtils.getVersionCode();
                 List<TagBean> list = new ArrayList<>();
                 for (int i = 0; i < children.size(); i++) {
                     Node child = children.get(i);
@@ -328,7 +318,7 @@ public class Controller implements Initializable {
                                 String outFileName = outDirName + "_" + checkBox.getText() + "_signed.apk";
                                 String outPath = outDir.getAbsolutePath() + File.separator + outFileName;
                                 //签名
-                                runCommand(java + " -jar " + apksigner + " sign --key " + filePk8.getAbsolutePath() + " --cert " + filePem.getAbsolutePath() + " --out " + outPath + " " + fileAPK);
+                                SignUtils.sign(fileAPK, outPath, filePk8.getAbsolutePath(), filePem.getAbsolutePath());
                                 updateLog(checkBox.getText() + " 签名成功\n" + outPath);
                                 try {
                                     list.add(new TagBean("", "v" + versionName + "/" + outFileName, PemUtils.getThumbprintMD5(PemUtils.getCertObject(filePem.getAbsolutePath()))));

@@ -417,7 +417,7 @@ public class ApkSignerTool {
         }
     }
 
-    private static ApkSigner.SignerConfig getSignerConfig(SignerParams signer,
+    public static ApkSigner.SignerConfig getSignerConfig(SignerParams signer,
             PasswordRetriever passwordRetriever, boolean deterministicDsaSigning) {
         try {
             signer.loadPrivateKeyAndCerts(passwordRetriever);

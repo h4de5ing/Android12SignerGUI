@@ -1,14 +1,12 @@
 package org.example;
 
-import net.dongliu.apk.parser.ApkParser;
-import net.dongliu.apk.parser.bean.ApkMeta;
 import org.example.api.utils.PemUtils;
 import org.example.config.ConfigBean;
 import org.example.config.GetConfig;
 import org.example.config.SignUtils;
 import org.example.config.TagBean;
 
-import java.io.*;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,13 +25,14 @@ public class Sign {
                 String tempTag = config.getKey("tag");
                 String tag = tempTag == null ? "" : tempTag;
                 System.out.println("tag:" + tag);
-                String signs = config.getKey("signs");
+                String tempSigns = config.getKey("signs");
+                if (tempSigns == null) System.err.println("没有配置签名信息，请配置app.config");
+                String signs = tempSigns == null ? "" : tempSigns;
                 System.out.println("signs:" + signs);
-                ApkParser apkParser = new ApkParser(fileApk);
-                ApkMeta apkMeta = apkParser.getApkMeta();
-                String packageName = apkMeta.getPackageName();
-                String versionName = apkMeta.getVersionName();
-                long versionCode = apkMeta.getVersionCode();
+                PemUtils.getAPkInfo(fileApk.getAbsolutePath());
+                String packageName = PemUtils.getPackageName();
+                String versionName = PemUtils.getVersionName();
+                long versionCode = PemUtils.getVersionCode();
                 List<TagBean> list = new ArrayList<>();
                 for (String s : signs.split(",")) {
                     String dir = signFiles.getAbsolutePath() + File.separator + s + File.separator;
@@ -47,8 +46,7 @@ public class Sign {
                             String aboutPath = outPath + File.separator + outFileName;
                             File outDir = new File(outPath);
                             if (!outDir.exists()) outDir.mkdirs();
-//                        System.out.println(outFileName);
-                            SignUtils.runCommand(SignUtils.java + " -jar " + SignUtils.apksigner + " sign --key " + filePk8.getAbsolutePath() + " --cert " + filePem.getAbsolutePath() + " --out " + outPath + File.separator + outFileName + " " + apkPath, null);
+                            SignUtils.sign(fileApk, outPath + File.separator + outFileName, filePk8.getAbsolutePath(), filePem.getAbsolutePath());
                             updateLog(outFileName + " 签名成功");
                             new File(aboutPath + ".idsig").delete();
                             try {
@@ -65,7 +63,7 @@ public class Sign {
                     SignUtils.write2File(bean.toString(), "out" + File.separator + packageName + File.separator + packageName + ".json");
                 } else updateLog("没有生成签名apk");
             } else {
-                updateLog("APK路径和配置文件未找到");
+                updateLog("APK路径和配置文件未找到，java -cp APKSignerGUI-1.3-SNAPSHOT.jar org.example.Sign app.apk app.config");
             }
         } catch (Exception e) {
             e.printStackTrace();
