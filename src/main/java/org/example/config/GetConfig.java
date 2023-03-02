@@ -1,7 +1,8 @@
 package org.example.config;
 
 import java.io.File;
-import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 public class GetConfig {
@@ -12,12 +13,13 @@ public class GetConfig {
         if (pp == null) {
             pp = new GetConfig();
             try {
-                File file = new File(System.getProperty("user.dir") + File.separator + fileName);
-                System.out.println("用户环境路径:" + file.getAbsolutePath());
-                System.out.println("程序执行路径:" + GetConfig.class.getClassLoader().getResource(fileName).getFile());
-                if (file.exists()) properties.load(new FileInputStream(file));
+                File file1 = new File(fileName);
+                File file2 = new File(System.getProperty("user.dir") + File.separator + fileName);
+                if (file1.exists()) properties.load(Files.newInputStream(Paths.get(fileName)));
+                else if (file2.exists()) properties.load(Files.newInputStream(file2.toPath()));
                 else properties.load(GetConfig.class.getClassLoader().getResourceAsStream(fileName));
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+//                e.printStackTrace();
             }
         }
         return pp;

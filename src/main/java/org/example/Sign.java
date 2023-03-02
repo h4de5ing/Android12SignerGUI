@@ -1,10 +1,6 @@
 package org.example;
 
-import org.example.config.PemUtils;
-import org.example.config.ConfigBean;
-import org.example.config.GetConfig;
-import org.example.config.SignUtils;
-import org.example.config.TagBean;
+import org.example.config.*;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -26,7 +22,7 @@ public class Sign {
                 String tag = tempTag == null ? "" : tempTag;
                 System.out.println("tag:" + tag);
                 String tempSigns = config.getKey("signs");
-                if (tempSigns == null) System.err.println("没有配置签名信息，请配置app.config");
+                if (tempSigns == null) System.err.println("没有找到配置文件" + args[1]);
                 String signs = tempSigns == null ? "" : tempSigns;
                 System.out.println("signs:" + signs);
                 PemUtils.getAPkInfo(fileApk.getAbsolutePath());
