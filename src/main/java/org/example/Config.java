@@ -13,7 +13,7 @@ public class Config {
         try {
             boolean isDelete = false;
             try {
-                if (args.length > 0) isDelete = Boolean.valueOf(args[0]);
+                if (args.length > 0) isDelete = Boolean.parseBoolean(args[0]);
             } catch (Exception e) {
                 System.err.println("无参数输入 isDelete=" + isDelete);
             }
